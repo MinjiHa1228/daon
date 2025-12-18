@@ -4,10 +4,9 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>daon</title>
+<title>Insert title here</title>
 </head>
 <body>
- <h1>되라되라되라</h1>
- 
+   ${ name }님 안녕하세요!!!
 </body>
 </html>

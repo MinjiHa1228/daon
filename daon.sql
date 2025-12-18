@@ -1,0 +1,2 @@
+ALTER TABLE product
+ADD COLUMN price INT NOT NULL COMMENT '단가';

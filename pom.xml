@@ -5,13 +5,13 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>4.0.0</version>
+		<version>3.5.7</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
-	<groupId>com.example</groupId>
-	<artifactId>daon</artifactId>
+	<groupId>com.onetouch</groupId>
+	<artifactId>interceptor</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>daon</name>
+	<name>OneTouch</name>
 	<description>Demo project for Spring Boot</description>
 	<url/>
 	<licenses>
@@ -29,15 +29,17 @@
 	<properties>
 		<java.version>17</java.version>
 	</properties>
+	
+	<!-- 환경설정 라이브러리 목록-->
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-webmvc</artifactId>
+			<artifactId>spring-boot-starter-web</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.mybatis.spring.boot</groupId>
 			<artifactId>mybatis-spring-boot-starter</artifactId>
-			<version>4.0.0</version>
+			<version>3.0.5</version>
 		</dependency>
 
 		<dependency>
@@ -58,32 +60,64 @@
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-webmvc-test</artifactId>
+			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.mybatis.spring.boot</groupId>
 			<artifactId>mybatis-spring-boot-starter-test</artifactId>
-			<version>4.0.0</version>
+			<version>3.0.5</version>
 			<scope>test</scope>
 		</dependency>
 		
-	<!-- JSP -->
-		<dependency>
+		
+		<!-- JSP -->
+    	<dependency>
 		    <groupId>org.apache.tomcat.embed</groupId>
-		    <artifactId>tomcat-embed-jasper</artifactId>
+		    <artifactId>tomcat-embed-jasper</artifactId>            
+		</dependency>  
+		
+		<!-- Servlet API -->
+		<dependency>
+			<groupId>jakarta.servlet</groupId>
+			<artifactId>jakarta.servlet-api</artifactId>
+			<version>6.0.0</version>
+			<scope>provided</scope>
 		</dependency>
 		
 		<dependency>
-		    <groupId>jakarta.servlet.jsp.jstl</groupId>
-		    <artifactId>jakarta.servlet.jsp.jstl-api</artifactId>
-		</dependency>
-		
-		<dependency>
-		    <groupId>org.glassfish.web</groupId>
-		    <artifactId>jakarta.servlet.jsp.jstl</artifactId>
-		</dependency>	
+	    <groupId>org.springframework.boot</groupId>
+	    <artifactId>spring-boot-starter-thymeleaf</artifactId>
+	</dependency>
 
+
+		
+		<!-- JSTL API -->
+		<dependency>
+			<groupId>jakarta.servlet.jsp.jstl</groupId>
+			<artifactId>jakarta.servlet.jsp.jstl-api</artifactId>
+			<version>3.0.0</version>
+		 </dependency>
+		<!-- JSTL 구현체-->	
+		 <dependency>
+			<groupId>org.glassfish.web</groupId>
+			<artifactId>jakarta.servlet.jsp.jstl</artifactId>
+			<version>3.0.1</version>
+		 </dependency>  
+		
+		<!-- PasswordEncoder 사용을 위한 라이브러리-->
+		<!--		
+		<dependency>
+		    <groupId>org.springframework.boot</groupId>
+		    <artifactId>spring-boot-starter-security</artifactId>
+		</dependency>
+		-->
+		
+		<!-- Spring Boot Mail -->
+		<dependency>
+		    <groupId>org.springframework.boot</groupId>
+		    <artifactId>spring-boot-starter-mail</artifactId>
+		</dependency>
 		
 	</dependencies>
 
