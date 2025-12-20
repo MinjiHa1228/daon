@@ -1,33 +1,163 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8">
-    <title>상품 목록</title>
+<meta charset="UTF-8">
+<title>상품 관리</title>
+
+<style>
+    body {
+        font-family: 'Pretendard', 'Apple SD Gothic Neo', Arial, sans-serif;
+        background-color: #f5f6f8;
+        margin: 0;
+        padding: 30px;
+    }
+
+    h1 {
+        margin-bottom: 20px;
+        font-size: 22px;
+    }
+
+    .container {
+        background: #fff;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+
+    .top-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+
+    .btn {
+        padding: 8px 14px;
+        background-color: #2f80ed;
+        color: #fff;
+        border-radius: 6px;
+        text-decoration: none;
+        font-size: 14px;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+    }
+
+    thead {
+        background-color: #f1f3f5;
+    }
+
+    th, td {
+        padding: 10px 8px;
+        border-bottom: 1px solid #e5e7eb;
+        text-align: center;
+    }
+
+    th {
+        font-weight: 600;
+        color: #333;
+    }
+
+    tbody tr:hover {
+        background-color: #f9fafb;
+    }
+
+    .badge {
+        display: inline-block;
+        padding: 3px 8px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .badge-single {
+        background: #e8f0fe;
+        color: #2f80ed;
+    }
+
+    .badge-set {
+        background: #fdecea;
+        color: #d93025;
+    }
+
+    .use-yes {
+        color: #27ae60;
+        font-weight: bold;
+    }
+
+    .use-no {
+        color: #e74c3c;
+        font-weight: bold;
+    }
+
+    .empty-color {
+        color: #aaa;
+        font-style: italic;
+    }
+</style>
 </head>
+
 <body>
 
-<h2>상품 목록 (Thymeleaf)</h2>
+<h1>📦 상품 관리</h1>
 
-<table border="1">
-    <tr>
-        <th>상품코드</th>
-        <th>상품명</th>
-        <th>타입</th>
-        <th>카테고리</th>
-        <th>색상</th>
-        <th>가격</th>
-    </tr>
+<div class="container">
+        <button type="button" onclick="openStockPopup('IN')">입고</button>
+		<button type="button" onclick="openStockPopup('OUT')">출고</button>
 
-    <tr th:each="p : ${list}">
-        <td th:text="${p.productCode}"></td>
-        <td th:text="${p.productName}"></td>
-        <td th:text="${p.type}"></td>
-        <td th:text="${p.category}"></td>
-        <td th:text="${p.color}"></td>
-        <td th:text="${p.price}"></td>
-    </tr>
+    <div class="top-bar">
+        <div>총 <b th:text="${#lists.size(list)}"></b>개 상품</div>
+        
+        <a href="/product/insert" class="btn">+ 상품 등록</a>
+    </div>
 
-</table>
+    <table>
+        <thead>
+            <tr>
+                <th>코드</th>
+                <th>상품명</th>
+                <th>타입</th>
+                <th>색상</th>
+                <th>카테고리</th>
+                <th>가격</th>
+                <th>사용여부</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:each="p : ${list}">
+                <td th:text="${p.productCode}"></td>
+                <td th:text="${p.productName}"></td>
+
+                <td>
+                    <span class="badge"
+                          th:classappend="${p.type == 'SET'} ? ' badge-set' : ' badge-single'"
+                          th:text="${p.type}">
+                    </span>
+                </td>
+
+                <td th:if="${p.color != null}"
+                    th:text="${p.color}">
+                </td>
+                <td th:if="${p.color == null}"
+                    class="empty-color">-</td>
+
+                <td th:text="${p.category}"></td>
+
+                <td th:text="${#numbers.formatInteger(p.price, 0, 'COMMA')} + ' 원'"></td>
+
+                <td>
+                    <span th:class="${p.useYn == 'Y'} ? 'use-yes' : 'use-no'"
+                          th:text="${p.useYn == 'Y'} ? '사용중' : '미사용'">
+                    </span>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+</div>
 
 </body>
 </html>

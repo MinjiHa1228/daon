@@ -3,20 +3,49 @@
   PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-<mapper namespace="com.example.daon.dao.ProductDao">
+<mapper namespace="com.example.daon.mapper.ProductMapper">
     
-    <select id="selectProductList" resultType="product">
+      <!-- 상품 목록 -->
+    <select id="selectProductList"
+            resultType="com.example.daon.vo.ProductVo">
         SELECT
-            product_code AS productCode,
-            product_name AS productName,
+            product_code   AS productCode,
+            product_name   AS productName,
             type,
-            category,
             color,
+            category,
+            use_yn         AS useYn,
             price,
-            use_yn AS useYn
+            created_at     AS createdAt,
+            updated_at     AS updatedAt
         FROM product
         WHERE use_yn = 'Y'
         ORDER BY product_code
     </select>
+
+    <!-- 상품 등록 -->
+    <insert id="insertProduct"
+            parameterType="com.example.daon.vo.ProductVo">
+        INSERT INTO product
+        (
+            product_code,
+            product_name,
+            type,
+            color,
+            category,
+            use_yn,
+            price
+        )
+        VALUES
+        (
+            #{productCode},
+            #{productName},
+            #{type},
+            #{color},
+            #{category},
+            #{useYn},
+            #{price}
+        )
+    </insert>
 
 </mapper>

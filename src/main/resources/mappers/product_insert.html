@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Insert title here</title>
+</head>
+<body>
+<form action="/product/insert" method="post">
+
+    <input type="text" name="productCode" placeholder="상품코드" required>
+    <input type="text" name="productName" placeholder="상품명" required>
+
+    <select name="type">
+        <option value="SINGLE">SINGLE</option>
+        <option value="SET">SET</option>
+    </select>
+
+    <input type="text" name="color" placeholder="색상 (세트는 비워도 됨)">
+
+    <select name="category">
+        <option value="도마">도마</option>
+        <option value="거치대">거치대</option>
+        <option value="세트">세트</option>
+    </select>
+
+    <input type="number" name="price" value="0">
+
+    <input type="hidden" name="useYn" value="Y">
+
+    <button type="submit">등록</button>
+</form>
+
+
+
+</body>
+</html>

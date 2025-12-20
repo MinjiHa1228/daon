@@ -9,5 +9,11 @@ public interface ProductService {
     List<ProductVo> getProductList();
 
     void insertProduct(ProductVo productVo);
+    
+
+    void stockIn(List<String> productCodes, int qty);
+    void stockOut(List<String> productCodes, int qty);
+    
+
 
 }

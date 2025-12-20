@@ -1,5 +1,7 @@
 package com.example.daon.vo;
 
+import java.time.LocalDateTime;
+
 import org.apache.ibatis.type.Alias;
 
 import lombok.Data;
@@ -15,5 +17,8 @@ public class ProductVo {
 	    private String color;         // 핑크
 	    private int price;            // 단가
 	    private String useYn;          // Y / N
+	    
+	    private LocalDateTime createdAt;
+	    private LocalDateTime updatedAt;
 
 }
