@@ -11,3 +11,6 @@ button,.btn{min-height:42px;padding:10px 13px!important;touch-action:manipulatio
 table{display:block;width:100%!important;max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;white-space:nowrap}thead,tbody{width:max-content;min-width:100%}th,td{padding:9px!important}
 .hr-cards{grid-template-columns:1fr 1fr!important}.hr-card strong{font-size:20px!important}.allowance-calendar{display:grid!important;grid-template-columns:repeat(7,minmax(92px,1fr))!important;overflow-x:auto;padding-bottom:6px}.cal-day{min-height:100px!important}.modal,.dialog{width:calc(100vw - 24px)!important;max-height:90vh;overflow:auto}
 }@media(max-width:430px){.hr-cards{grid-template-columns:1fr!important}}
+
+/* 상단 메뉴 로그아웃 버튼: 메뉴가 길어도 오른쪽 끝에 항상 보이게 */
+.common-nav-links{flex:1 1 auto;min-width:0}.nav-logout{flex:0 0 auto;margin-left:auto}.nav-logout button{cursor:pointer;white-space:nowrap}
