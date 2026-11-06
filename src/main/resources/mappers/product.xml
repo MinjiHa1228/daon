@@ -60,9 +60,14 @@
     </update>
     <update id="softDeleteProduct">UPDATE product SET use_yn='N',updated_at=NOW() WHERE product_code=#{productCode} AND use_yn='Y'</update>
 
-    <insert id="insertStockIfNotExists">
+    <insert id="insertStockIfNotExists" databaseId="mysql">
         INSERT IGNORE INTO product_stock (product_code, quantity)
         VALUES (#{productCode}, 0)
+    </insert>
+    <insert id="insertStockIfNotExists" databaseId="postgresql">
+        INSERT INTO product_stock (product_code, quantity)
+        VALUES (#{productCode}, 0)
+        ON CONFLICT (product_code) DO NOTHING
     </insert>
 
     <update id="updateStock">
@@ -146,7 +151,7 @@
     </select>
 
     <insert id="insertCustomer" parameterType="com.example.daon.vo.CustomerVo"
-            useGeneratedKeys="true" keyProperty="customerId">
+            useGeneratedKeys="true" keyProperty="customerId" keyColumn="customer_id">
         INSERT INTO customer
             (customer_name, manager_name, phone, email, address, memo, use_yn, created_by, updated_by)
         VALUES
@@ -187,13 +192,13 @@
                role, use_yn AS useYn, created_at AS createdAt
         FROM app_user ORDER BY user_id
     </select>
-    <insert id="insertUser" parameterType="com.example.daon.vo.UserVo" useGeneratedKeys="true" keyProperty="userId">
+    <insert id="insertUser" parameterType="com.example.daon.vo.UserVo" useGeneratedKeys="true" keyProperty="userId" keyColumn="user_id">
         INSERT INTO app_user(username, password_hash, display_name, role, use_yn)
         VALUES(#{username}, #{passwordHash}, #{displayName}, #{role}, 'Y')
     </insert>
     <update id="updateUser">
         UPDATE app_user SET display_name=#{displayName},role=#{role},
-        password_hash=CASE WHEN #{passwordHash} IS NULL OR #{passwordHash}='' THEN password_hash ELSE #{passwordHash} END,updated_at=NOW()
+        password_hash=CASE WHEN #{passwordHash,jdbcType=VARCHAR} IS NULL OR #{passwordHash,jdbcType=VARCHAR}='' THEN password_hash ELSE #{passwordHash,jdbcType=VARCHAR} END,updated_at=NOW()
         WHERE username=#{username} AND use_yn='Y'
     </update>
     <update id="softDeleteUser">UPDATE app_user SET use_yn='N',updated_at=NOW() WHERE username=#{username} AND use_yn='Y'</update>
@@ -207,22 +212,22 @@
                target_type AS targetType, target_id AS targetId, details, created_at AS createdAt
         FROM audit_log
         WHERE action_type != 'LOGIN'
-          AND created_at &gt;= DATE_SUB(NOW(), INTERVAL 1 MONTH)
+          AND created_at &gt;= (NOW() - INTERVAL '1' MONTH)
         ORDER BY audit_id DESC
         LIMIT #{limit} OFFSET #{offset}
     </select>
     <select id="countAuditLogs" resultType="int">
         SELECT COUNT(*) FROM audit_log
         WHERE action_type != 'LOGIN'
-          AND created_at &gt;= DATE_SUB(NOW(), INTERVAL 1 MONTH)
+          AND created_at &gt;= (NOW() - INTERVAL '1' MONTH)
     </select>
     <delete id="deleteExpiredAuditLogs">
         DELETE FROM audit_log
         WHERE action_type = 'LOGIN'
-           OR created_at &lt; DATE_SUB(NOW(), INTERVAL 1 MONTH)
+           OR created_at &lt; (NOW() - INTERVAL '1' MONTH)
     </delete>
 
-    <select id="selectEmployeeList" resultType="com.example.daon.vo.EmployeeVo">
+    <select id="selectEmployeeList" databaseId="mysql" resultType="com.example.daon.vo.EmployeeVo">
         SELECT e.employee_id AS employeeId, e.employee_code AS employeeCode,
                e.employee_name AS employeeName, e.department,
                e.position_name AS positionName, e.phone, e.email, e.hire_date AS hireDate,
@@ -244,7 +249,29 @@
         GROUP BY e.employee_id
         ORDER BY CASE WHEN e.employment_status='ACTIVE' THEN 0 ELSE 1 END, e.employee_name
     </select>
-    <select id="selectEmployeeById" resultType="com.example.daon.vo.EmployeeVo">
+    <select id="selectEmployeeList" databaseId="postgresql" resultType="com.example.daon.vo.EmployeeVo">
+        SELECT e.employee_id AS employeeId, e.employee_code AS employeeCode,
+               e.employee_name AS employeeName, e.department,
+               e.position_name AS positionName, e.phone, e.email, e.hire_date AS hireDate,
+               e.employment_status AS employmentStatus, e.annual_leave_total AS annualLeaveTotal,
+               e.hourly_wage AS hourlyWage, e.weekly_scheduled_hours AS weeklyScheduledHours,
+               e.weekly_scheduled_days AS weeklyScheduledDays, e.daily_scheduled_hours AS dailyScheduledHours,
+               CASE WHEN e.hire_date IS NULL THEN 15
+                    WHEN EXTRACT(YEAR FROM AGE(CURRENT_DATE, e.hire_date)) &lt; 1
+                         THEN LEAST(11, GREATEST(0, (EXTRACT(YEAR FROM AGE(CURRENT_DATE, e.hire_date))*12 + EXTRACT(MONTH FROM AGE(CURRENT_DATE, e.hire_date)))::int))
+                    ELSE LEAST(25,15 + FLOOR((EXTRACT(YEAR FROM AGE(CURRENT_DATE, e.hire_date))-1)/2))::int END AS annualLeaveRecommended,
+               COALESCE(SUM(CASE WHEN EXTRACT(YEAR FROM l.leave_date) = EXTRACT(YEAR FROM CURRENT_DATE) THEN l.days ELSE 0 END), 0) AS annualLeaveUsed,
+               e.annual_leave_total - COALESCE(SUM(CASE WHEN EXTRACT(YEAR FROM l.leave_date) = EXTRACT(YEAR FROM CURRENT_DATE) THEN l.days ELSE 0 END), 0) AS annualLeaveRemaining,
+               e.resume_original_name AS resumeOriginalName, e.resume_stored_name AS resumeStoredName,
+               e.memo, e.created_by AS createdBy, e.updated_by AS updatedBy,
+               e.created_at AS createdAt, e.updated_at AS updatedAt
+        FROM employee e
+        LEFT JOIN employee_leave_history l ON l.employee_id = e.employee_id
+        WHERE e.use_yn='Y'
+        GROUP BY e.employee_id
+        ORDER BY CASE WHEN e.employment_status='ACTIVE' THEN 0 ELSE 1 END, e.employee_name
+    </select>
+    <select id="selectEmployeeById" databaseId="mysql" resultType="com.example.daon.vo.EmployeeVo">
         SELECT e.employee_id AS employeeId, e.employee_code AS employeeCode,
                e.employee_name AS employeeName, e.department,
                e.position_name AS positionName, e.phone, e.email, e.hire_date AS hireDate,
@@ -264,7 +291,27 @@
         WHERE e.employee_id=#{employeeId} AND e.use_yn='Y'
         GROUP BY e.employee_id
     </select>
-    <insert id="insertEmployee" parameterType="com.example.daon.vo.EmployeeVo" useGeneratedKeys="true" keyProperty="employeeId">
+    <select id="selectEmployeeById" databaseId="postgresql" resultType="com.example.daon.vo.EmployeeVo">
+        SELECT e.employee_id AS employeeId, e.employee_code AS employeeCode,
+               e.employee_name AS employeeName, e.department,
+               e.position_name AS positionName, e.phone, e.email, e.hire_date AS hireDate,
+               e.employment_status AS employmentStatus, e.annual_leave_total AS annualLeaveTotal,
+               e.hourly_wage AS hourlyWage, e.weekly_scheduled_hours AS weeklyScheduledHours,
+               e.weekly_scheduled_days AS weeklyScheduledDays, e.daily_scheduled_hours AS dailyScheduledHours,
+               CASE WHEN e.hire_date IS NULL THEN 15
+                    WHEN EXTRACT(YEAR FROM AGE(CURRENT_DATE, e.hire_date)) &lt; 1
+                         THEN LEAST(11, GREATEST(0, (EXTRACT(YEAR FROM AGE(CURRENT_DATE, e.hire_date))*12 + EXTRACT(MONTH FROM AGE(CURRENT_DATE, e.hire_date)))::int))
+                    ELSE LEAST(25,15 + FLOOR((EXTRACT(YEAR FROM AGE(CURRENT_DATE, e.hire_date))-1)/2))::int END AS annualLeaveRecommended,
+               COALESCE(SUM(CASE WHEN EXTRACT(YEAR FROM l.leave_date) = EXTRACT(YEAR FROM CURRENT_DATE) THEN l.days ELSE 0 END), 0) AS annualLeaveUsed,
+               e.annual_leave_total - COALESCE(SUM(CASE WHEN EXTRACT(YEAR FROM l.leave_date) = EXTRACT(YEAR FROM CURRENT_DATE) THEN l.days ELSE 0 END), 0) AS annualLeaveRemaining,
+               e.resume_original_name AS resumeOriginalName, e.resume_stored_name AS resumeStoredName,
+               e.memo, e.created_by AS createdBy, e.updated_by AS updatedBy,
+               e.created_at AS createdAt, e.updated_at AS updatedAt
+        FROM employee e LEFT JOIN employee_leave_history l ON l.employee_id=e.employee_id
+        WHERE e.employee_id=#{employeeId} AND e.use_yn='Y'
+        GROUP BY e.employee_id
+    </select>
+    <insert id="insertEmployee" parameterType="com.example.daon.vo.EmployeeVo" useGeneratedKeys="true" keyProperty="employeeId" keyColumn="employee_id">
         INSERT INTO employee(employee_code,employee_name,department,position_name,phone,email,
             hire_date,employment_status,annual_leave_total,hourly_wage,weekly_scheduled_hours,weekly_scheduled_days,daily_scheduled_hours,resume_original_name,resume_stored_name,
             memo,created_by,updated_by)
@@ -277,8 +324,8 @@
             department=#{department},position_name=#{positionName},phone=#{phone},email=#{email},
             hire_date=#{hireDate},employment_status=#{employmentStatus},annual_leave_total=#{annualLeaveTotal},
             hourly_wage=#{hourlyWage},weekly_scheduled_hours=#{weeklyScheduledHours},weekly_scheduled_days=#{weeklyScheduledDays},daily_scheduled_hours=#{dailyScheduledHours},
-            resume_original_name=COALESCE(#{resumeOriginalName},resume_original_name),
-            resume_stored_name=COALESCE(#{resumeStoredName},resume_stored_name),
+            resume_original_name=COALESCE(#{resumeOriginalName,jdbcType=VARCHAR},resume_original_name),
+            resume_stored_name=COALESCE(#{resumeStoredName,jdbcType=VARCHAR},resume_stored_name),
             memo=#{memo},updated_by=#{updatedBy},updated_at=NOW()
         WHERE employee_id=#{employeeId}
     </update>
@@ -286,7 +333,7 @@
         UPDATE employee SET use_yn='N', employment_status='RETIRED', updated_by=#{updatedBy}, updated_at=NOW()
         WHERE employee_id=#{employeeId} AND use_yn='Y'
     </update>
-    <insert id="insertEmployeeLeave" parameterType="com.example.daon.vo.EmployeeLeaveVo" useGeneratedKeys="true" keyProperty="leaveHistoryId">
+    <insert id="insertEmployeeLeave" parameterType="com.example.daon.vo.EmployeeLeaveVo" useGeneratedKeys="true" keyProperty="leaveHistoryId" keyColumn="leave_history_id">
         INSERT INTO employee_leave_history(employee_id,leave_date,days,leave_type,memo,created_by)
         VALUES(#{employeeId},#{leaveDate},#{days},#{leaveType},#{memo},#{createdBy})
     </insert>
@@ -305,7 +352,7 @@
         FROM employee_payroll WHERE employee_id=#{employeeId}
         ORDER BY pay_month DESC LIMIT 36
     </select>
-    <insert id="upsertEmployeePayroll" parameterType="com.example.daon.vo.EmployeePayrollVo">
+    <insert id="upsertEmployeePayroll" databaseId="mysql" parameterType="com.example.daon.vo.EmployeePayrollVo">
         INSERT INTO employee_payroll(employee_id,pay_month,base_salary,allowance,extra_allowance,deduction,net_salary,
             payment_status,payment_date,memo,created_by,updated_by)
         VALUES(#{employeeId},#{payMonth},#{baseSalary},#{allowance},#{extraAllowance},#{deduction},#{netSalary},
@@ -313,6 +360,15 @@
         ON DUPLICATE KEY UPDATE base_salary=VALUES(base_salary),allowance=VALUES(allowance),extra_allowance=VALUES(extra_allowance),
             deduction=VALUES(deduction),net_salary=VALUES(net_salary),payment_status=VALUES(payment_status),
             payment_date=VALUES(payment_date),memo=VALUES(memo),updated_by=VALUES(updated_by),updated_at=NOW()
+    </insert>
+    <insert id="upsertEmployeePayroll" databaseId="postgresql" parameterType="com.example.daon.vo.EmployeePayrollVo">
+        INSERT INTO employee_payroll(employee_id,pay_month,base_salary,allowance,extra_allowance,deduction,net_salary,
+            payment_status,payment_date,memo,created_by,updated_by)
+        VALUES(#{employeeId},#{payMonth},#{baseSalary},#{allowance},#{extraAllowance},#{deduction},#{netSalary},
+            #{paymentStatus},#{paymentDate},#{memo},#{createdBy},#{updatedBy})
+        ON CONFLICT (employee_id,pay_month) DO UPDATE SET base_salary=EXCLUDED.base_salary,allowance=EXCLUDED.allowance,extra_allowance=EXCLUDED.extra_allowance,
+            deduction=EXCLUDED.deduction,net_salary=EXCLUDED.net_salary,payment_status=EXCLUDED.payment_status,
+            payment_date=EXCLUDED.payment_date,memo=EXCLUDED.memo,updated_by=EXCLUDED.updated_by,updated_at=NOW()
     </insert>
     <delete id="deleteEmployeePayroll">DELETE FROM employee_payroll WHERE payroll_id=#{payrollId} AND employee_id=#{employeeId}</delete>
 
@@ -324,14 +380,14 @@
                total_allowance AS totalAllowance, attended, memo, created_by AS createdBy, updated_by AS updatedBy,
                created_at AS createdAt, updated_at AS updatedAt
         FROM employee_work_allowance
-        WHERE employee_id=#{employeeId} AND DATE_FORMAT(work_date,'%Y-%m')=#{workMonth}
+        WHERE employee_id=#{employeeId} AND work_date &gt;= CAST(CONCAT(#{workMonth},'-01') AS DATE) AND work_date &lt; CAST(CONCAT(#{workMonth},'-01') AS DATE) + INTERVAL '1' MONTH
         ORDER BY work_date
     </select>
     <select id="selectEmployeeWorkAllowanceTotal" resultType="java.math.BigDecimal">
         SELECT COALESCE(SUM(total_allowance),0) FROM employee_work_allowance
-        WHERE employee_id=#{employeeId} AND DATE_FORMAT(work_date,'%Y-%m')=#{workMonth}
+        WHERE employee_id=#{employeeId} AND work_date &gt;= CAST(CONCAT(#{workMonth},'-01') AS DATE) AND work_date &lt; CAST(CONCAT(#{workMonth},'-01') AS DATE) + INTERVAL '1' MONTH
     </select>
-    <insert id="upsertEmployeeWorkAllowance" parameterType="com.example.daon.vo.EmployeeWorkAllowanceVo">
+    <insert id="upsertEmployeeWorkAllowance" databaseId="mysql" parameterType="com.example.daon.vo.EmployeeWorkAllowanceVo">
         INSERT INTO employee_work_allowance(employee_id,work_date,board_quantity,board_unit_price,board_allowance,
             overtime_hours,hourly_wage,overtime_multiplier,overtime_allowance,total_allowance,attended,memo,created_by,updated_by)
         VALUES(#{employeeId},#{workDate},#{boardQuantity},#{boardUnitPrice},#{boardAllowance},#{overtimeHours},
@@ -340,6 +396,16 @@
             board_allowance=VALUES(board_allowance),overtime_hours=VALUES(overtime_hours),hourly_wage=VALUES(hourly_wage),
             overtime_multiplier=VALUES(overtime_multiplier),overtime_allowance=VALUES(overtime_allowance),
             total_allowance=VALUES(total_allowance),attended=VALUES(attended),memo=VALUES(memo),updated_by=VALUES(updated_by),updated_at=NOW()
+    </insert>
+    <insert id="upsertEmployeeWorkAllowance" databaseId="postgresql" parameterType="com.example.daon.vo.EmployeeWorkAllowanceVo">
+        INSERT INTO employee_work_allowance(employee_id,work_date,board_quantity,board_unit_price,board_allowance,
+            overtime_hours,hourly_wage,overtime_multiplier,overtime_allowance,total_allowance,attended,memo,created_by,updated_by)
+        VALUES(#{employeeId},#{workDate},#{boardQuantity},#{boardUnitPrice},#{boardAllowance},#{overtimeHours},
+            #{hourlyWage},#{overtimeMultiplier},#{overtimeAllowance},#{totalAllowance},#{attended},#{memo},#{createdBy},#{updatedBy})
+        ON CONFLICT (employee_id,work_date) DO UPDATE SET board_quantity=EXCLUDED.board_quantity,board_unit_price=EXCLUDED.board_unit_price,
+            board_allowance=EXCLUDED.board_allowance,overtime_hours=EXCLUDED.overtime_hours,hourly_wage=EXCLUDED.hourly_wage,
+            overtime_multiplier=EXCLUDED.overtime_multiplier,overtime_allowance=EXCLUDED.overtime_allowance,
+            total_allowance=EXCLUDED.total_allowance,attended=EXCLUDED.attended,memo=EXCLUDED.memo,updated_by=EXCLUDED.updated_by,updated_at=NOW()
     </insert>
     <delete id="deleteEmployeeWorkAllowance">DELETE FROM employee_work_allowance WHERE employee_id=#{employeeId} AND work_date=#{workDate}</delete>
 
@@ -363,7 +429,7 @@
         FROM sales_order o JOIN customer c ON c.customer_id=o.customer_id JOIN product p ON p.product_code=o.product_code
         WHERE o.order_id=#{orderId}
     </select>
-    <insert id="insertSalesOrder" parameterType="com.example.daon.vo.SalesOrderVo" useGeneratedKeys="true" keyProperty="orderId">
+    <insert id="insertSalesOrder" parameterType="com.example.daon.vo.SalesOrderVo" useGeneratedKeys="true" keyProperty="orderId" keyColumn="order_id">
         INSERT INTO sales_order(order_no,customer_id,product_code,ordered_qty,unit_price,total_amount,order_date,due_date,order_status,memo,created_by,updated_by)
         VALUES(#{orderNo},#{customerId},#{productCode},#{orderedQty},#{unitPrice},#{totalAmount},#{orderDate},#{dueDate},'ORDERED',#{memo},#{createdBy},#{updatedBy})
     </insert>
