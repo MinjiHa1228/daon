@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>재고 관리 - 다온테크 ERP</title>
+<style>:root{--navy:#17324d;--blue:#2675a8;--line:#d8e1e8;--green:#1c7b55;--red:#c53d3d}*{box-sizing:border-box}body{margin:0;background:#f4f7f9;color:#24323c;font-family:"Malgun Gothic",sans-serif}.nav{height:62px;background:var(--navy);display:flex;align-items:center;gap:25px;padding:0 28px}.brand{font-size:22px;font-weight:800;color:#fff;margin-right:18px}.nav a{color:#dceaf2;text-decoration:none;font-weight:700}.nav a.active{color:#fff;border-bottom:3px solid #58aed5;height:62px;display:flex;align-items:center}.wrap{max-width:1450px;margin:27px auto;padding:0 20px}.top{display:flex;justify-content:space-between;align-items:end;margin-bottom:18px}.top h1{margin:0 0 6px}.buttons a{display:inline-block;text-decoration:none;padding:11px 15px;border-radius:7px;font-weight:800;margin-left:7px;background:var(--blue);color:#fff}.buttons .sub{background:#fff;color:var(--navy);border:1px solid var(--line)}.cards{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:17px}.card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:17px}.card span{color:#6c7c87}.card strong{display:block;font-size:27px;margin-top:4px}.card.inbound{border-top:4px solid var(--green)}.card.outbound{border-top:4px solid var(--red)}.card.inbound strong{color:var(--green)}.card.outbound strong{color:var(--red)}.message,.error{padding:11px 14px;border-radius:7px;margin-bottom:12px}.message{background:#e5f5ed;color:#226a4d}.error{background:#fdeaea;color:#a52d2d}.toolbar{background:#fff;border:1px solid var(--line);border-radius:10px 10px 0 0;padding:14px;display:flex;gap:10px}.search{flex:1;max-width:470px;padding:11px 13px;border:1px solid #b8c7d0;border-radius:7px;font:inherit}.filter{padding:10px;border:1px solid #b8c7d0;border-radius:7px;background:#fff;font:inherit}.panel{background:#fff;border:1px solid var(--line);border-top:0;border-radius:0 0 10px 10px;overflow:auto}table{width:100%;border-collapse:collapse;min-width:1150px}th{background:#edf3f6;text-align:left;padding:12px;color:#52636f;font-size:13px}td{padding:12px;border-top:1px solid var(--line)}tr.selectable{cursor:pointer}tr.selectable:hover td{background:#f8fbfc}tr.selectable.selected td{background:#eaf5fa;border-top-color:#92bfd5}tr.selectable.selected td:first-child{box-shadow:inset 4px 0 #2675a8}.selectable:not(.selected) .quick form{visibility:hidden}.selectable:not(.selected) .detail{color:transparent;background:transparent}.num{text-align:right;font-variant-numeric:tabular-nums}.stock{font-size:18px;font-weight:900}.low{color:var(--red)}.ok{color:var(--green)}.pill{display:inline-block;padding:4px 9px;border-radius:12px;background:#e8f3f8;color:#22698f;font-size:12px;font-weight:800}.quick{white-space:nowrap}.quick form{display:flex;align-items:center;gap:5px}.qty{width:76px;padding:8px;border:1px solid #b8c7d0;border-radius:6px;text-align:right;font-weight:700}.quick button{border:0;padding:8px 11px;border-radius:6px;font-size:13px;font-weight:800;cursor:pointer}.in{background:#e0f3ea;color:#176944}.out{background:#fde8e8;color:#a92f2f}.month-in{color:var(--green);font-weight:800}.month-out{color:var(--red);font-weight:800}.total{background:#e5f3f7;font-size:18px;font-weight:900;color:var(--navy)}.empty{display:none;text-align:center;padding:45px;color:#71818c}@media(max-width:1000px){.cards{grid-template-columns:repeat(2,1fr)}}@media(max-width:750px){.nav{padding:0 10px;gap:11px}.wrap{padding:0 9px}.top{display:block}.buttons{margin-top:12px}.cards{grid-template-columns:1fr}.toolbar{flex-wrap:wrap}.search{max-width:none;width:100%}}</style>
+<link rel="stylesheet" href="/mobile.css">
+<script defer src="/common-nav.js"></script></head>
+<style>.selectable:not(.selected) .quick form{visibility:visible}.selectable:not(.selected) .detail{color:inherit;background:inherit}.selectable:not(.selected) .month-in{color:var(--green)}.selectable:not(.selected) .month-out{color:var(--red)}.selectable:not(.selected) .total{color:var(--navy);background:#e5f3f7}.selected-name{display:none;margin-bottom:12px;padding:10px 14px;border-radius:7px;background:#eaf5fa;color:#195f83;font-weight:800}.selected-name.show{display:block}.adjust-form{display:none;align-items:center;gap:8px;background:#fff8e5;border:1px solid #e7ca76;border-radius:8px;padding:10px 12px;margin:-4px 0 12px}.adjust-form.show{display:flex}.adjust-form label{font-weight:800;color:#765817}.adjust-form input{padding:8px 9px;border:1px solid #cdbb87;border-radius:6px;font:inherit}.adjust-form input[type=number]{width:110px;text-align:right}.adjust-form input[name=reason]{flex:1;min-width:180px}.adjust-form button{border:0;background:#b17813;color:#fff;border-radius:6px;padding:9px 13px;font-weight:800;cursor:pointer}</style>
+<body>
+<nav class="nav" th:attr="data-admin=${session.loginUser.role=='ADMIN'}">
+<div class="brand">다온테크 ERP</div>
+<a class="active" href="/product/list">재고 관리</a>
+<a href="/order/list">수주·생산·출고</a>
+<a href="/stock/movement">입출고 처리</a>
+<a href="/stock/history">입출고 이력</a>
+<a th:if="${session.loginUser.role=='ADMIN'}" href="/customer/list">거래처 관리</a>
+<a th:if="${session.loginUser.role=='ADMIN'}" href="/employee/list">직원 관리</a>
+<a th:if="${session.loginUser.role=='ADMIN'}" href="/admin/users">관리자</a>
+<form action="/logout" method="post" style="margin-left:auto">
+<button style="border:0;background:#ffffff22;color:white;padding:7px 10px;border-radius:5px" th:text="${session.loginUser.displayName}+' 로그아웃'">
+</button>
+</form>
+</nav>
+<main class="wrap">
+<div class="top">
+<div>
+<h1>재고 관리</h1>
+<div>모든 상품의 재고 합계를 확인하고, 행을 선택해 바로 입고·출고할 수 있습니다.</div>
+</div>
+<div class="buttons">
+<a class="sub" href="/stock/ledger">월별 재고대장</a>
+<a class="sub" href="/product/insert">+ 상품 등록</a>
+<a href="/stock/movement">입출고 등록</a>
+</div>
+</div>
+<div id="selectedName" class="selected-name">선택 상품</div>
+<form id="adjustForm" class="adjust-form" th:if="${session.loginUser.role=='ADMIN'}" action="/stock/adjust" method="post" onsubmit="return confirm('선택한 상품의 현재 총재고를 입력한 수량으로 정정할까요?');">
+<label>관리자 현재고 정정</label>
+<input id="adjustProductCode" type="hidden" name="productCode">
+<input id="adjustQuantity" type="number" name="targetQuantity" min="0" required>
+<input name="reason" placeholder="정정 사유 (선택)">
+<button type="submit">현재고 저장</button>
+</form>
+<section class="cards">
+<div class="card">
+<span>등록 상품</span>
+<strong th:text="${#lists.size(list)}+'개'">0개</strong>
+</div>
+<div class="card">
+<span id="stockLabel">전체 현재 총재고</span>
+<strong id="stockValue" th:data-all="${totalStock}" th:text="${#numbers.formatInteger(totalStock,0,'COMMA')}+'개'">0개</strong>
+</div>
+<div class="card inbound">
+<span id="inboundLabel">전체 이번 달 입고</span>
+<strong id="inboundValue" th:data-all="${monthlyInbound}" th:text="${'+' + #numbers.formatInteger(monthlyInbound,0,'COMMA') + '개'}">+0개</strong>
+</div>
+<div class="card outbound">
+<span id="outboundLabel">전체 이번 달 출고</span>
+<strong id="outboundValue" th:data-all="${monthlyOutbound}" th:text="${'-' + #numbers.formatInteger(monthlyOutbound,0,'COMMA') + '개'}">-0개</strong>
+</div>
+<div class="card">
+<span>재고 부족(100개 미만)</span>
+<strong th:text="${lowStockCount}+'개'">0개</strong>
+</div>
+</section>
+<div th:if="${message}" class="message" th:text="${message}">
+</div>
+<div th:if="${error}" class="error" th:text="${error}">
+</div>
+<div class="toolbar">
+<input id="search" class="search" placeholder="상품명, 색상 또는 상품코드 검색">
+<select id="category" class="filter">
+<option value="">전체 카테고리</option>
+<option>도마</option>
+<option>거치대</option>
+<option>세트</option>
+</select>
+<select id="status" class="filter">
+<option value="">전체 재고</option>
+<option value="low">100개 미만</option>
+<option value="normal">100개 이상</option>
+</select>
+</div>
+<section class="panel">
+<table>
+<thead>
+<tr>
+<th>상품코드</th>
+<th>상품명</th>
+<th>색상/세트</th>
+<th>카테고리</th>
+<th>상태</th>
+<th class="quick">수량 직접 처리</th>
+<th class="num">이번 달 총입고</th>
+<th class="num">이번 달 총출고</th>
+<th class="num">현재 총재고</th>
+<th th:if="${session.loginUser.role=='ADMIN'}">관리</th>
+</tr>
+</thead>
+<tbody id="rows">
+<tr class="selectable" th:each="p:${list}" th:data-search="${(p.productCode+' '+p.productName+' '+(p.color==null?'':p.color)).toLowerCase()}" th:data-category="${p.category}" th:data-stock="${p.quantity}" tabindex="0">
+<td th:text="${p.productCode}">
+</td>
+<td>
+<b th:text="${p.productName}">
+</b>
+</td>
+<td th:text="${p.color!=null?p.color:p.productName}">
+</td>
+<td>
+<span class="pill" th:text="${p.category}">
+</span>
+</td>
+<td th:text="${p.quantity<100?'확인 필요':'정상'}" th:class="${p.quantity<100?'low':'ok'}">
+</td>
+<td class="quick">
+<form action="/stock/quick" method="post">
+<input type="hidden" name="productCode" th:value="${p.productCode}">
+<input class="qty" type="number" name="quantity" min="1" required value="1" aria-label="처리 수량">
+<button class="in" name="historyType" value="IN" type="submit">+ 입고</button>
+<button class="out" name="historyType" value="OUT" type="submit">− 출고</button>
+</form>
+</td>
+<td class="num month-in detail" th:text="${'+' + #numbers.formatInteger(ledgerByProduct[p.productCode].monthlyInbound,0,'COMMA')}">
+</td>
+<td class="num month-out detail" th:text="${'-' + #numbers.formatInteger(ledgerByProduct[p.productCode].outboundQty,0,'COMMA')}">
+</td>
+<td class="num total detail" th:text="${#numbers.formatInteger(p.quantity,0,'COMMA')}">
+</td>
+<td th:if="${session.loginUser.role=='ADMIN'}"><div class="manage-actions"><a class="manage-btn edit-action" th:href="@{/product/insert(editCode=${p.productCode})}"><span>✎</span> 수정</a><form action="/product/delete" method="post" onsubmit="return confirm('이 상품을 삭제할까요? 재고와 입출고 이력은 보존됩니다.');"><input type="hidden" name="productCode" th:value="${p.productCode}"><button class="manage-btn delete-action" type="submit"><span>×</span> 삭제</button></form></div></td>
+</tr>
+</tbody>
+</table>
+<div id="empty" class="empty">검색 조건에 맞는 상품이 없습니다.</div>
+</section>
+</main>
+<style>.manage-actions{display:flex;align-items:center;justify-content:center;gap:7px;white-space:nowrap}.manage-actions form{margin:0}.manage-btn{height:34px;min-width:66px;display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:0 11px;border:1px solid transparent;border-radius:8px;font-size:13px;font-weight:800;text-decoration:none;cursor:pointer;transition:.15s}.manage-btn span{font-size:16px;line-height:1}.edit-action{color:#176b94;background:#e8f3f9;border-color:#b8d9e9}.edit-action:hover{background:#d5ebf5;border-color:#74b4d2}.delete-action{color:#b53333;background:#fff0f0;border-color:#f0c5c5}.delete-action:hover{background:#fde1e1;border-color:#de8e8e}.manage-btn:focus{outline:3px solid #2675a82b;outline-offset:1px}@media(max-width:760px){.manage-btn{min-width:62px;height:38px;padding:0 9px}}</style>
+<script>const q=document.getElementById('search'),cat=document.getElementById('category'),status=document.getElementById('status'),rows=[...document.querySelectorAll('#rows tr')],empty=document.getElementById('empty'),selectedName=document.getElementById('selectedName'),stockLabel=document.getElementById('stockLabel'),stockValue=document.getElementById('stockValue'),inboundLabel=document.getElementById('inboundLabel'),inboundValue=document.getElementById('inboundValue'),outboundLabel=document.getElementById('outboundLabel'),outboundValue=document.getElementById('outboundValue'),adjustForm=document.getElementById('adjustForm'),adjustProductCode=document.getElementById('adjustProductCode'),adjustQuantity=document.getElementById('adjustQuantity');function selectRow(row){rows.forEach(r=>r.classList.toggle('selected',r===row));const cells=row.cells,name=cells[1].innerText.trim(),color=cells[2].innerText.trim(),code=cells[0].innerText.trim(),current=row.querySelector('.total').innerText.trim();selectedName.textContent='선택 상품: '+name+' / '+color+' ('+code+')';selectedName.classList.add('show');stockLabel.textContent='선택 상품 현재고';inboundLabel.textContent='선택 상품 이번 달 입고';outboundLabel.textContent='선택 상품 이번 달 출고';stockValue.textContent=current+'개';inboundValue.textContent=row.querySelector('.month-in').innerText.trim()+'개';outboundValue.textContent=row.querySelector('.month-out').innerText.trim()+'개';if(adjustForm){adjustProductCode.value=code;adjustQuantity.value=current.replaceAll(',','');adjustForm.classList.add('show');}}function resetSummary(){selectedName.classList.remove('show');adjustForm?.classList.remove('show');stockLabel.textContent='전체 현재 총재고';inboundLabel.textContent='전체 이번 달 입고';outboundLabel.textContent='전체 이번 달 출고';stockValue.textContent=Number(stockValue.dataset.all).toLocaleString()+'개';inboundValue.textContent='+'+Number(inboundValue.dataset.all).toLocaleString()+'개';outboundValue.textContent='-'+Number(outboundValue.dataset.all).toLocaleString()+'개';}rows.forEach(r=>{r.addEventListener('click',()=>selectRow(r));r.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();selectRow(r);}});});function filter(){let shown=0,selectionHidden=false,s=q.value.trim().toLowerCase();rows.forEach(r=>{let stock=Number(r.dataset.stock),ok=(!s||r.dataset.search.includes(s))&&(!cat.value||r.dataset.category===cat.value)&&(!status.value||(status.value==='low'?stock<100:stock>=100));r.style.display=ok?'':'none';if(!ok&&r.classList.contains('selected')){r.classList.remove('selected');selectionHidden=true;}if(ok)shown++;});if(selectionHidden)resetSummary();empty.style.display=shown?'none':'block';}q.addEventListener('input',filter);cat.addEventListener('change',filter);status.addEventListener('change',filter);</script>
+</body>
+</html>

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>입출고 이력 - 다온테크 ERP</title>
+<style>*{box-sizing:border-box}body{margin:0;background:#f4f7f9;color:#25313c;font-family:"Malgun Gothic",sans-serif}.nav{height:62px;background:#17324d;color:white;display:flex;align-items:center;gap:26px;padding:0 28px}.brand{font-size:22px;font-weight:800;margin-right:20px}.nav a{color:#dceaf2;text-decoration:none;font-weight:700}.wrap{max-width:1280px;margin:30px auto;padding:0 20px}.panel{background:white;border:1px solid #d8e1e8;border-radius:10px;overflow:auto}table{width:100%;border-collapse:collapse;white-space:nowrap}th{background:#edf3f6;text-align:left;padding:12px}td{padding:11px 12px;border-top:1px solid #d8e1e8}.plus{color:#19704c;font-weight:800}.minus{color:#c43c3c;font-weight:800}.num{text-align:right}.empty{text-align:center;color:#72808b;padding:50px}</style>
+<style>.wrap{max-width:1680px}.panel{overflow:visible}table{table-layout:fixed;white-space:normal;font-size:13px}th,td{word-break:keep-all;overflow-wrap:anywhere}th:nth-child(1){width:132px}th:nth-child(2){width:82px}th:nth-child(3){width:78px}th:nth-child(4){width:88px}th:nth-child(5){width:105px}th:nth-child(6){width:90px}th:nth-child(7){width:105px}th:nth-child(8){width:70px}th:nth-child(9){width:90px}th:nth-child(11){width:100px}.pagination{display:flex;justify-content:center;gap:6px;margin:20px 0;flex-wrap:wrap}.pagination a{min-width:38px;height:38px;padding:0 10px;border:1px solid #c7d4dc;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;color:#31556c;text-decoration:none;background:#fff;font-weight:800}.pagination a.active{background:#2675a8;color:#fff;border-color:#2675a8}.pagination a.disabled{pointer-events:none;opacity:.4}@media(max-width:760px){.panel{overflow:hidden}table{display:table!important;min-width:0!important;font-size:12px}th:nth-child(4),td:nth-child(4),th:nth-child(6),td:nth-child(6),th:nth-child(7),td:nth-child(7),th:nth-child(9),td:nth-child(9){display:none}th,td{padding:7px 5px!important}th:nth-child(n){width:auto}.wrap{padding:10px!important}}</style>
+<link rel="stylesheet" href="/mobile.css">
+<style>@media(max-width:760px){.panel table{display:table!important;min-width:0!important;white-space:normal!important;overflow:visible!important}.panel thead,.panel tbody{width:auto!important;min-width:0!important}}</style>
+<script defer src="/common-nav.js"></script></head>
+<body>
+<nav class="nav" th:attr="data-admin=${session.loginUser.role=='ADMIN'}">
+<div class="brand">다온테크 ERP</div>
+<a href="/product/list">재고 관리</a>
+<a href="/order/list">수주·생산·출고</a>
+<a href="/stock/movement">입출고 처리</a>
+<a href="/stock/history">입출고 이력</a>
+<a th:if="${session.loginUser.role=='ADMIN'}" href="/admin/audit">전체 변경 이력</a>
+</nav>
+<main class="wrap">
+<h1>입출고 이력</h1>
+<p th:text="${'전체 '+totalCount+'건 · 한 페이지에 20건씩 표시합니다.'}">한 페이지에 20건씩 표시합니다.</p>
+<div th:if="${message}" style="padding:10px;background:#e5f5ed;color:#226a4d;margin-bottom:10px" th:text="${message}"></div><div th:if="${error}" style="padding:10px;background:#fdeaea;color:#a52d2d;margin-bottom:10px" th:text="${error}"></div>
+<section class="panel">
+<table>
+<thead>
+<tr>
+<th>일시</th>
+<th>작업자</th>
+<th>구분</th>
+<th>상품코드</th>
+<th>상품</th>
+<th>색상</th>
+<th>거래처</th>
+<th class="num">증감</th>
+<th class="num">처리 후 재고</th>
+<th>메모</th>
+<th th:if="${session.loginUser.role=='ADMIN'}">관리</th>
+</tr>
+</thead>
+<tbody>
+<tr th:each="h:${history}" th:style="${h.cancelYn=='Y'?'opacity:.55;text-decoration:line-through':''}">
+<td th:text="${#temporals.format(h.createdAt,'yyyy-MM-dd HH:mm')}">
+</td>
+<td>
+<b th:text="${h.createdBy!=null?h.createdBy:'이관자료'}">
+</b>
+</td>
+<td th:text="${h.historyType}">
+</td>
+<td th:text="${h.productCode}">
+</td>
+<td th:text="${h.productName}">
+</td>
+<td th:text="${h.color!=null?h.color:'-'}">
+</td>
+<td th:text="${h.customerName!=null?h.customerName:'-'}">
+</td>
+<td class="num" th:classappend="${h.quantity>=0}?' plus':' minus'" th:text="${h.quantity>0?'+'+h.quantity:h.quantity}">
+</td>
+<td class="num" th:text="${#numbers.formatInteger(h.balanceAfter,0,'COMMA')}">
+</td>
+<td th:text="${h.memo}">
+</td>
+<td th:if="${session.loginUser.role=='ADMIN'}"><span th:if="${h.cancelYn=='Y'}">취소됨</span><form th:if="${h.cancelYn!='Y' and h.historyType!='RESET' and h.historyType!='OPENING'}" action="/stock/history/cancel" method="post" onsubmit="return confirm('이 이력을 취소하고 재고를 원상복구할까요?');"><input type="hidden" name="historyId" th:value="${h.historyId}"><button type="submit">취소·정정</button></form></td>
+</tr>
+<tr th:if="${#lists.isEmpty(history)}">
+<td class="empty" colspan="11">등록된 입출고 이력이 없습니다.</td>
+</tr>
+</tbody>
+</table>
+</section>
+<nav class="pagination" th:if="${totalPages>1}" aria-label="입출고 이력 페이지"><a th:classappend="${currentPage==1}?' disabled':''" th:href="@{/stock/history(page=${currentPage-1})}">이전</a><a th:each="p:${pageNumbers}" th:href="@{/stock/history(page=${p})}" th:text="${p}" th:classappend="${p==currentPage}?' active':''"></a><a th:classappend="${currentPage==totalPages}?' disabled':''" th:href="@{/stock/history(page=${currentPage+1})}">다음</a></nav>
+</main>
+</body>
+</html>

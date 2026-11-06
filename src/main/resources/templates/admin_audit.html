@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>전체 변경 이력</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f4f7f9;font-family:"Malgun Gothic",sans-serif;color:#25313c}.nav{min-height:62px;background:#17324d;padding:0 28px;color:#fff;display:flex;align-items:center;gap:24px}.nav a{color:#dceaf2;text-decoration:none;font-weight:700}.wrap{max-width:1250px;margin:30px auto;padding:0 18px}.heading{display:flex;justify-content:space-between;align-items:end;margin-bottom:16px}.heading h1{margin:0 0 6px}.count{background:#e8f3f8;color:#22698f;padding:7px 11px;border-radius:999px;font-weight:800}.panel{background:#fff;border:1px solid #d8e1e8;border-radius:10px;overflow:auto}table{width:100%;border-collapse:collapse;min-width:900px}th,td{text-align:left;padding:12px;border-bottom:1px solid #d8e1e8}th{background:#edf3f6;color:#52636f;font-size:13px}tbody tr:hover{background:#f8fbfc}.empty{text-align:center;color:#7a8993;padding:45px}.pager{display:flex;justify-content:center;align-items:center;gap:8px;margin:20px 0}.pager a,.pager span{min-width:42px;padding:9px 12px;border:1px solid #c8d4dc;border-radius:7px;text-align:center;text-decoration:none;color:#17324d;background:#fff;font-weight:700}.pager .disabled{color:#aeb9bf;background:#f1f3f5}.pager .current{background:#2675a8;color:#fff;border-color:#2675a8}.note{color:#667784}
+</style>
+<link rel="stylesheet" href="/mobile.css">
+<script defer src="/common-nav.js"></script></head>
+<body>
+<nav class="nav" th:attr="data-admin=${session.loginUser.role=='ADMIN'}">
+<b>관리자</b>
+<a href="/product/list">재고 관리</a>
+<a href="/order/list">수주·생산·출고</a>
+<a href="/admin/users">사용자 관리</a>
+<a href="/admin/audit">전체 변경 이력</a>
+</nav>
+<main class="wrap">
+<div class="heading">
+<div>
+<h1>전체 변경 이력</h1>
+<div class="note">로그인 기록은 제외하며, 상품·재고·거래처·계정 변경 기록을 최근 한 달간 보관합니다.</div>
+</div>
+<span class="count" th:text="${'총 ' + totalCount + '건'}">총 0건</span>
+</div>
+<section class="panel">
+<table>
+<thead>
+<tr>
+<th>일시</th>
+<th>작업자</th>
+<th>작업</th>
+<th>대상</th>
+<th>대상 ID</th>
+<th>상세 내용</th>
+</tr>
+</thead>
+<tbody>
+<tr th:each="l:${logs}">
+<td th:text="${#temporals.format(l.createdAt,'yyyy-MM-dd HH:mm:ss')}">
+</td>
+<td>
+<b th:text="${l.username}">
+</b>
+</td>
+<td th:text="${l.actionType}">
+</td>
+<td th:text="${l.targetType}">
+</td>
+<td th:text="${l.targetId ?: '-'}">
+</td>
+<td th:text="${l.details}">
+</td>
+</tr>
+<tr th:if="${#lists.isEmpty(logs)}">
+<td class="empty" colspan="6">최근 한 달간 변경 이력이 없습니다.</td>
+</tr>
+</tbody>
+</table>
+</section>
+<nav class="pager" aria-label="변경 이력 페이지">
+<a th:if="${hasPrevious}" th:href="@{/admin/audit(page=${currentPage - 1})}">‹ 이전</a>
+<span th:unless="${hasPrevious}" class="disabled">‹ 이전</span>
+<th:block th:each="pageNo:${pageNumbers}">
+<span th:if="${pageNo == currentPage}" class="current" th:text="${pageNo}">
+</span>
+<a th:unless="${pageNo == currentPage}" th:href="@{/admin/audit(page=${pageNo})}" th:text="${pageNo}">
+</a>
+</th:block>
+<a th:if="${hasNext}" th:href="@{/admin/audit(page=${currentPage + 1})}">다음 ›</a>
+<span th:unless="${hasNext}" class="disabled">다음 ›</span>
+</nav>
+</main>
+</body>
+</html>

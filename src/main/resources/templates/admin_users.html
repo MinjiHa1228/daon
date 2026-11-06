@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>사용자 관리</title>
+<style>body{margin:0;background:#f4f7f9;font-family:"Malgun Gothic";color:#25313c}.nav{background:#17324d;padding:20px 28px;color:#fff}.nav a{color:#fff;margin-right:22px;text-decoration:none}.wrap{max-width:1100px;margin:30px auto}.grid{display:grid;grid-template-columns:360px 1fr;gap:20px}.panel{background:#fff;border:1px solid #d8e1e8;border-radius:10px;padding:22px}label{display:block;font-weight:700;margin:12px 0 5px}input,select{width:100%;padding:10px;box-sizing:border-box}button{margin-top:16px;padding:11px 18px;background:#2675a8;color:#fff;border:0;border-radius:6px}table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:11px;border-bottom:1px solid #d8e1e8}.msg{padding:10px;background:#e5f5ed}.error{padding:10px;background:#fdeaea}</style>
+<link rel="stylesheet" href="/mobile.css">
+<script defer src="/common-nav.js"></script></head>
+<body>
+<nav class="nav" th:attr="data-admin=${session.loginUser.role=='ADMIN'}">
+<b>관리자</b>　<a href="/product/list">재고 관리</a><a href="/order/list">수주·생산·출고</a>
+<a href="/admin/users">사용자 관리</a>
+<a href="/admin/audit">변경 이력</a>
+</nav>
+<main class="wrap">
+<h1>사용자 및 권한 관리</h1>
+<div th:if="${message}" class="msg" th:text="${message}">
+</div>
+<div th:if="${error}" class="error" th:text="${error}">
+</div>
+<div class="grid">
+<section class="panel">
+<h2>직원 계정 생성</h2>
+<form method="post">
+<label>이름</label>
+<input name="displayName" required>
+<label>아이디</label>
+<input name="username" required minlength="3">
+<label>임시 비밀번호</label>
+<input name="password" type="password" required minlength="8">
+<label>권한</label>
+<select name="role">
+<option value="EMPLOYEE">일반 직원</option>
+<option value="ADMIN">관리자</option>
+</select>
+<button>계정 생성</button>
+</form>
+</section>
+<section class="panel">
+<h2>등록 사용자</h2>
+<table>
+<thead>
+<tr>
+<th>이름</th>
+<th>아이디</th>
+<th>권한</th>
+<th>상태</th>
+<th>생성일</th>
+<th>관리</th>
+</tr>
+</thead>
+<tbody>
+<tr th:each="u:${users}">
+<td><input name="displayName" th:value="${u.displayName}" th:attr="form=${'userForm'+u.userId}" required></td>
+<td th:text="${u.username}">
+</td>
+<td><select name="role" th:attr="form=${'userForm'+u.userId}"><option value="EMPLOYEE" th:selected="${u.role=='EMPLOYEE'}">일반 직원</option><option value="ADMIN" th:selected="${u.role=='ADMIN'}">관리자</option></select></td>
+<td th:text="${u.useYn=='Y'?'사용중':'중지'}">
+</td>
+<td th:text="${#temporals.format(u.createdAt,'yyyy-MM-dd')}">
+</td>
+<td><form th:id="${'userForm'+u.userId}" action="/admin/users/update" method="post" style="display:flex;gap:6px"><input type="hidden" name="username" th:value="${u.username}"><input name="password" type="password" placeholder="새 비밀번호(선택)" minlength="8"><button type="submit">수정</button><button type="submit" formaction="/admin/users/delete" onclick="return confirm('이 계정을 삭제(중지)할까요?');">삭제</button></form></td>
+</tr>
+</tbody>
+</table>
+</section>
+</div>
+</main>
+</body>
+</html>

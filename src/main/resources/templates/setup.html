@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>관리자 최초 설정</title>
+<style>*{box-sizing:border-box}body{margin:0;background:#eef4f7;font-family:"Malgun Gothic";color:#25313c}.box{width:min(460px,calc(100% - 30px));margin:70px auto;background:#fff;padding:32px;border-radius:14px;box-shadow:0 12px 35px #17324d24}h1{margin-top:0}label{display:block;font-weight:700;margin:14px 0 6px}input{width:100%;padding:12px;border:1px solid #b9c7d0;border-radius:7px;font:inherit}button{width:100%;margin-top:22px;padding:13px;background:#2675a8;color:#fff;border:0;border-radius:7px;font-weight:800}.error{background:#fdeaea;color:#a52d2d;padding:10px;border-radius:6px}</style>
+<link rel="stylesheet" href="/mobile.css">
+</head>
+<body>
+<main class="box">
+<h1>다온테크 ERP 최초 설정</h1>
+<p>가장 먼저 사용할 관리자 계정을 만드세요.</p>
+<div th:if="${error}" class="error" th:text="${error}">
+</div>
+<form method="post" action="/setup">
+<label>관리자 이름</label>
+<input name="displayName" required placeholder="예: 홍길동">
+<label>로그인 아이디</label>
+<input name="username" required minlength="3" autocomplete="username">
+<label>비밀번호</label>
+<input name="password" type="password" minlength="8" required autocomplete="new-password">
+<button>관리자 계정 만들기</button>
+</form>
+</main>
+</body>
+</html>

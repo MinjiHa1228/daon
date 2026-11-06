@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>거래처 관리 - 다온테크 ERP</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f4f7f9;color:#25313c;font-family:"Malgun Gothic",sans-serif}.nav{min-height:62px;background:#17324d;color:white;display:flex;align-items:center;gap:24px;padding:0 28px}.brand{font-size:22px;font-weight:800;margin-right:18px}.nav a{color:#dceaf2;text-decoration:none;font-weight:700}.wrap{max-width:1280px;margin:30px auto;padding:0 20px}.layout{display:grid;grid-template-columns:390px 1fr;gap:20px;align-items:start}.panel{background:white;border:1px solid #d8e1e8;border-radius:12px;padding:22px;box-shadow:0 5px 18px #17324d0b}h1{margin-bottom:8px}.subtitle{color:#657582;margin-top:0}label{font-weight:700;display:block;margin:11px 0 6px}input,textarea{width:100%;padding:10px;border:1px solid #bccbd5;border-radius:7px;font:inherit}input:focus,textarea:focus{outline:2px solid #2675a833;border-color:#2675a8}textarea{height:85px;resize:vertical}.btn{border:0;color:white;padding:10px 15px;border-radius:7px;font-weight:800;cursor:pointer}.btn-primary{margin-top:16px;background:#2675a8;width:100%;padding:12px}.btn-edit{background:#2675a8;text-decoration:none;display:inline-block}.btn-delete{background:#c84646}.btn-cancel{background:#788894;text-decoration:none;display:block;text-align:center;margin-top:8px}.actions{display:flex;gap:7px;white-space:nowrap}.actions form{margin:0}.actions input{display:none}table{width:100%;border-collapse:collapse}th{text-align:left;background:#edf3f6;padding:11px;white-space:nowrap}td{padding:11px;border-top:1px solid #d8e1e8;vertical-align:middle}.message,.error{padding:11px;border-radius:7px;margin-bottom:14px}.message{background:#e5f5ed;color:#226a4d}.error{background:#fdeaea;color:#a52d2d}.edit-badge{display:inline-block;background:#fff0c9;color:#835c00;padding:4px 9px;border-radius:999px;font-size:13px}.muted{color:#8a98a2}.email{font-size:13px;color:#5d7080}@media(max-width:900px){.layout{grid-template-columns:1fr}.nav{flex-wrap:wrap;padding:14px 20px}table{display:block;overflow-x:auto}}
+</style>
+<link rel="stylesheet" href="/mobile.css">
+<script defer src="/common-nav.js"></script></head>
+<body>
+<nav class="nav" th:attr="data-admin=${session.loginUser.role=='ADMIN'}">
+<div class="brand">다온테크 ERP</div>
+<a href="/product/list">재고현황</a>
+<a href="/stock/movement">입출고 처리</a>
+<a href="/stock/history">입출고 이력</a>
+<a href="/customer/list">거래처 관리</a>
+<form action="/logout" method="post" style="margin-left:auto">
+<button class="btn" style="background:#ffffff22" th:text="${session.loginUser.displayName}+' 로그아웃'">
+</button>
+</form>
+</nav>
+<main class="wrap">
+<h1>거래처 관리</h1>
+<p class="subtitle">관리자는 거래처 정보를 등록·수정·삭제할 수 있습니다. 삭제해도 기존 입출고 이력은 보존됩니다.</p>
+<div th:if="${message}" class="message" th:text="${message}">
+</div>
+<div th:if="${error}" class="error" th:text="${error}">
+</div>
+<div class="layout">
+<section class="panel">
+<h2 th:if="${editCustomer == null}">새 거래처 등록</h2>
+<div th:if="${editCustomer != null}">
+<span class="edit-badge">수정 중</span>
+<h2 th:text="${editCustomer.customerName}">
+</h2>
+</div>
+<form th:action="${editCustomer == null ? '/customer/insert' : '/customer/update'}" method="post">
+<input th:if="${editCustomer != null}" type="hidden" name="customerId" th:value="${editCustomer.customerId}">
+<label>거래처명 *</label>
+<input name="customerName" required th:value="${editCustomer?.customerName}">
+<label>담당자</label>
+<input name="managerName" th:value="${editCustomer?.managerName}">
+<label>연락처</label>
+<input name="phone" th:value="${editCustomer?.phone}">
+<label>이메일</label>
+<input name="email" type="email" th:value="${editCustomer?.email}">
+<label>주소</label>
+<input name="address" th:value="${editCustomer?.address}">
+<label>메모</label>
+<textarea name="memo" th:text="${editCustomer?.memo}">
+</textarea>
+<button class="btn btn-primary" type="submit" th:text="${editCustomer == null ? '거래처 저장' : '수정 내용 저장'}">
+</button>
+<a th:if="${editCustomer != null}" href="/customer/list" class="btn btn-cancel">수정 취소</a>
+</form>
+</section>
+<section class="panel">
+<h2>거래처 목록</h2>
+<table>
+<thead>
+<tr>
+<th>거래처명</th>
+<th>담당자</th>
+<th>연락처 / 이메일</th>
+<th>주소</th>
+<th>관리</th>
+</tr>
+</thead>
+<tbody>
+<tr th:each="c:${customers}">
+<td>
+<b th:text="${c.customerName}">
+</b>
+<div class="muted" th:text="${c.memo}">
+</div>
+</td>
+<td th:text="${c.managerName ?: '-'}">
+</td>
+<td>
+<div th:text="${c.phone ?: '-'}">
+</div>
+<div class="email" th:text="${c.email}">
+</div>
+</td>
+<td th:text="${c.address ?: '-'}">
+</td>
+<td>
+<div class="actions">
+<a class="btn btn-edit" th:href="@{/customer/list(editId=${c.customerId})}">수정</a>
+<form action="/customer/delete" method="post" onsubmit="return confirm('이 거래처를 삭제할까요? 기존 입출고 이력은 유지됩니다.');">
+<input type="hidden" name="customerId" th:value="${c.customerId}">
+<button class="btn btn-delete" type="submit">삭제</button>
+</form>
+</div>
+</td>
+</tr>
+<tr th:if="${#lists.isEmpty(customers)}">
+<td colspan="5">등록된 거래처가 없습니다.</td>
+</tr>
+</tbody>
+</table>
+</section>
+</div>
+</main>
+</body>
+</html>

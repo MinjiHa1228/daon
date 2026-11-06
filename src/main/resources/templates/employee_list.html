@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>직원 관리 - 다온테크 ERP</title>
+<style>*{box-sizing:border-box}body{margin:0;background:#f4f7f9;color:#25313c;font-family:"Malgun Gothic",sans-serif}.nav{min-height:62px;background:#17324d;color:#fff;display:flex;align-items:center;gap:24px;padding:0 28px}.brand{font-size:22px;font-weight:800}.nav a{color:#dceaf2;text-decoration:none;font-weight:700}.wrap{max-width:1450px;margin:28px auto;padding:0 18px}.message,.error{padding:11px 14px;border-radius:7px;margin-bottom:12px}.message{background:#e5f5ed;color:#226a4d}.error{background:#fdeaea;color:#a52d2d}.layout{display:grid;grid-template-columns:390px 1fr;gap:18px;align-items:start}.panel{background:#fff;border:1px solid #d8e1e8;border-radius:11px;padding:20px;overflow:auto}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.full{grid-column:1/-1}label{display:block;font-weight:700;margin:8px 0 5px}input,select,textarea{width:100%;padding:9px 10px;border:1px solid #b9c8d2;border-radius:6px;font:inherit}textarea{height:70px}.btn{border:0;border-radius:7px;padding:10px 14px;font-weight:800;cursor:pointer;text-decoration:none;display:inline-block}.primary{background:#2675a8;color:#fff;width:100%;margin-top:13px}.secondary{background:#e8f3f8;color:#20678d}.leave{background:#fff8e5;border:1px solid #ead18e;border-radius:8px;padding:13px;margin-top:15px}.leave-grid{display:grid;grid-template-columns:1fr 90px;gap:8px}.leave button{background:#b17813;color:#fff;width:100%;margin-top:9px}table{width:100%;border-collapse:collapse;min-width:900px}th{background:#edf3f6;color:#52636f;text-align:left;padding:11px;font-size:13px}td{padding:11px;border-top:1px solid #d8e1e8}.num{text-align:right;font-variant-numeric:tabular-nums}.remaining{font-size:18px;font-weight:900;color:#16724c}.low{color:#c53d3d}.status{padding:4px 8px;border-radius:999px;background:#e7f5ed;color:#176844;font-size:12px;font-weight:800}.status.off{background:#eee;color:#697780}.summary{display:flex;gap:9px;margin-bottom:14px}.summary div{background:#edf5f8;padding:9px 12px;border-radius:7px}.history{margin-top:15px}.history table{min-width:0;font-size:13px}@media(max-width:950px){.layout{grid-template-columns:1fr}.nav{flex-wrap:wrap;padding:14px 18px}.grid{grid-template-columns:1fr}}</style>
+<link rel="stylesheet" href="/mobile.css">
+<script defer src="/common-nav.js"></script></head>
+<style>.hr-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:16px 0}.hr-card{background:#fff;border:1px solid #d8e1e8;border-radius:9px;padding:14px}.hr-card span{color:#697b87}.hr-card strong{display:block;font-size:24px;margin-top:4px}.employee-tools{display:flex;gap:8px;margin-bottom:12px}.employee-tools input{max-width:360px}.employee-tools select{width:150px}.hint{font-size:12px;color:#6d7c86;margin-top:4px}@media(max-width:800px){.hr-cards{grid-template-columns:1fr 1fr}}</style>
+<style>.allowance-calendar{display:grid;grid-template-columns:repeat(7,minmax(70px,1fr));gap:3px;margin:10px 0 15px}.cal-head{text-align:center;font-weight:800;padding:6px;background:#e9eef1}.cal-day{min-height:82px;background:#fff;border:1px solid #d8e1e8;padding:5px;display:flex;flex-direction:column;font-size:11px}.cal-day em{font-style:normal;font-weight:800;font-size:13px}.cal-day span{display:block}.cal-day strong{margin-top:auto;color:#16724c}.cal-day.worked{background:#eaf7ee;border-color:#8bc9a5}.cal-day.empty{background:#f4f4f4}.selected-row{background:#eaf6fc}@media(max-width:700px){.allowance-calendar{overflow-x:auto;grid-template-columns:repeat(7,100px)}}</style>
+<style>.wrap{max-width:1680px}.layout{grid-template-columns:minmax(720px,1.35fr) minmax(560px,1fr);justify-content:center}.layout>.panel:first-child{width:100%}@media(max-width:1250px){.layout{grid-template-columns:1fr}.layout>.panel:first-child{max-width:950px;margin:0 auto}}</style>
+<style>
+.layout{grid-template-columns:1fr;gap:16px}
+.layout>.panel:first-child{max-width:none;margin:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:start;overflow:visible}
+.layout>.panel:first-child>h2{grid-column:1/-1;margin:0 0 2px}
+.layout>.panel:first-child>form{grid-column:1}
+.layout>.panel:first-child>.leave{margin-top:0}
+.layout>.panel:first-child>.history{margin-top:0;max-height:540px;overflow:auto}
+#allowance-management{grid-column:1/3}
+#payroll-management{grid-column:3}
+#allowance-management .allowance-calendar{min-width:0}
+#payroll-management .grid{grid-template-columns:1fr 1fr}
+.layout>.panel:nth-child(2){width:100%}
+@media(max-width:1200px){.layout>.panel:first-child{grid-template-columns:1fr 1fr}#allowance-management{grid-column:1/-1}#payroll-management{grid-column:1/-1}}
+@media(max-width:760px){.layout>.panel:first-child{display:block}.layout>.panel:first-child>*{margin-top:14px}.layout>.panel:first-child>h2{margin-top:0}}
+</style>
+<style>
+/* 직원관리: 정보 수정 → 연차 → 수당/급여 순서의 2열 작업 화면 */
+#employee-detail{display:grid!important;grid-template-columns:minmax(460px,.8fr) minmax(700px,1.2fr)!important;grid-template-rows:auto auto auto auto;gap:16px!important;background:transparent;border:0;padding:0;box-shadow:none}
+#employee-detail>h2{grid-column:1/-1!important;margin:0;padding:16px 20px;background:#17324d;color:#fff;border-radius:10px}
+#employee-detail>form{grid-column:1!important;grid-row:2!important;background:#fff;border:1px solid #d8e1e8;border-radius:10px;padding:20px}
+#employee-detail>.leave:not(#allowance-management):not(#payroll-management){grid-column:1!important;grid-row:3!important;margin:0}
+#employee-detail>.history{grid-column:1!important;grid-row:4!important;margin:0;max-height:340px;overflow:auto;background:#fff;border:1px solid #d8e1e8;border-radius:10px;padding:15px}
+#allowance-management{grid-column:2!important;grid-row:2/4!important;margin:0}
+#payroll-management{grid-column:2!important;grid-row:4!important;margin:0}
+#employee-detail .primary{position:sticky;bottom:8px;z-index:5;box-shadow:0 4px 12px #17324d33}
+@media(max-width:1200px){#employee-detail{grid-template-columns:1fr!important}#employee-detail>*{grid-column:1!important;grid-row:auto!important}#employee-detail>h2{grid-column:1!important}}
+</style>
+<style>
+/* 직원 등록은 전체 폭, 저장 직후 직원 목록, 상세 관리는 그 아래 */
+.layout{display:flex!important;flex-direction:column!important;gap:16px!important}
+#employee-detail{display:contents!important}
+#employee-detail>h2{order:1!important;width:100%;margin:0!important}
+#employee-detail>form{order:2!important;width:100%;margin:0!important;padding:20px;background:#fff;border:1px solid #d8e1e8;border-radius:10px}
+#employee-detail>form>.grid{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:12px 16px}
+#employee-detail>form .full{grid-column:1/-1!important}
+.layout>section.panel:nth-of-type(2){order:3!important;width:100%;margin:0}
+#employee-detail>.leave:not(#allowance-management):not(#payroll-management){order:4!important;width:100%;margin:0!important}
+#employee-detail>.history{order:5!important;width:100%;margin:0!important;max-height:340px}
+#allowance-management{order:6!important;width:100%;margin:0!important}
+#payroll-management{order:7!important;width:100%;margin:0!important}
+@media(max-width:1100px){#employee-detail>form>.grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+@media(max-width:760px){#employee-detail>form>.grid{grid-template-columns:1fr!important}#employee-detail>form{padding:14px}}
+</style>
+<style>.cal-day:not(.empty){cursor:pointer;transition:.15s}.cal-day:not(.empty):hover{border-color:#2675a8;box-shadow:0 0 0 2px #2675a822;transform:translateY(-1px)}.cal-day.selected{border:2px solid #2675a8;background:#e7f3fb}.calendar-entry-form{margin-top:14px;padding:14px;background:#fff;border:2px solid #2675a8;border-radius:9px}</style>
+<style>.allowance-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0}.allowance-summary>div{background:#fff;border:1px solid #dbc98f;border-radius:8px;padding:12px}.allowance-summary span,.allowance-summary small{display:block;color:#687782}.allowance-summary strong{display:block;font-size:21px;margin-top:4px;color:#17324d}.allowance-summary .total{background:#e8f3f8;border-color:#8fc0d9}.allowance-summary .total strong{color:#16724c}@media(max-width:760px){.allowance-summary{grid-template-columns:1fr}}</style>
+<style>.employee-form-actions{grid-column:1/-1;display:flex;justify-content:flex-end;align-items:center;gap:10px;margin-top:14px}.employee-form-actions .btn{position:static!important;width:auto!important;min-width:110px;margin:0!important;box-shadow:none!important;text-align:center}.employee-form-actions .primary{min-width:170px}@media(max-width:520px){.employee-form-actions{justify-content:stretch}.employee-form-actions .btn{flex:1;min-width:0}}</style>
+<style>.work-modal-overlay[hidden]{display:none!important}.work-modal-overlay{position:fixed;inset:0;z-index:1000;background:#10283d99;display:flex;align-items:center;justify-content:center;padding:20px}.work-modal-overlay .calendar-entry-form{width:min(720px,100%);max-height:90vh;overflow:auto;margin:0;background:#fff;border:0;box-shadow:0 18px 50px #0005}.work-modal-title{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #d8e1e8;margin:-2px -2px 14px;padding:0 2px 10px}.work-modal-title h3{margin:0}.work-modal-title button{width:40px;height:40px;border:0;border-radius:50%;background:#edf3f6;color:#334a5d;font-size:27px;cursor:pointer}.work-modal-overlay .calendar-entry-form>button[type=submit]{width:100%;margin-top:12px}@media(max-width:600px){.work-modal-overlay{padding:10px;align-items:flex-end}.work-modal-overlay .calendar-entry-form{max-height:92vh;border-radius:14px 14px 0 0}.work-modal-overlay .grid{grid-template-columns:1fr!important}}</style>
+<script defer src="/employee.js">
+</script>
+<body>
+<nav class="nav" th:attr="data-admin=${session.loginUser.role=='ADMIN'}">
+<div class="brand">다온테크 ERP</div>
+<a href="/product/list">재고 관리</a>
+<a href="/order/list">수주·생산·출고</a>
+<a href="/customer/list">거래처 관리</a>
+<a href="/employee/list">직원 관리</a>
+<a href="/admin/users">계정 관리</a>
+<a href="/admin/audit">전체 변경 이력</a>
+</nav>
+<main class="wrap">
+<h1>직원 관리</h1>
+<p>직원별 연차, 이력서와 월급 내역을 한곳에서 관리합니다.</p>
+<div class="hr-cards">
+<div class="hr-card">
+<span>재직 직원</span>
+<strong th:text="${activeCount+'명'}">0명</strong>
+</div>
+<div class="hr-card">
+<span>휴직 직원</span>
+<strong th:text="${leaveCount+'명'}">0명</strong>
+</div>
+<div class="hr-card">
+<span>퇴사 직원</span>
+<strong th:text="${retiredCount+'명'}">0명</strong>
+</div>
+<div class="hr-card">
+<span th:text="${editEmployee==null?'직원별 잔여 연차':editEmployee.employeeName+' 잔여 연차'}">직원별 잔여 연차</span>
+<strong th:text="${editEmployee==null?'목록에서 확인':editEmployee.annualLeaveRemaining+'일'}">목록에서 확인</strong>
+</div>
+</div>
+<div th:if="${message}" class="message" th:text="${message}">
+</div>
+<div th:if="${error}" class="error" th:text="${error}">
+</div>
+<div class="layout">
+<section id="employee-detail" class="panel">
+<h2 th:text="${editEmployee==null?'직원 등록':'직원 정보 수정'}">
+</h2>
+<form id="employeeForm" action="/employee/save" method="post" enctype="multipart/form-data">
+<input th:if="${editEmployee!=null}" type="hidden" name="employeeId" th:value="${editEmployee.employeeId}">
+<div class="grid">
+<div>
+<label>사번 *</label>
+<input name="employeeCode" required th:value="${editEmployee?.employeeCode}" placeholder="예: DT-001">
+</div>
+<div>
+<label>직원명 *</label>
+<input name="employeeName" required th:value="${editEmployee?.employeeName}">
+</div>
+<div>
+<label>부서</label>
+<input name="department" th:value="${editEmployee?.department}">
+</div>
+<div>
+<label>직급</label>
+<input name="positionName" th:value="${editEmployee?.positionName}">
+</div>
+<div>
+<label>연락처</label>
+<input name="phone" th:value="${editEmployee?.phone}">
+</div>
+<div>
+<label>이메일</label>
+<input name="email" type="email" th:value="${editEmployee?.email}">
+</div>
+<div>
+<label>입사일</label>
+<input name="hireDate" type="date" th:value="${editEmployee?.hireDate}">
+</div>
+<div>
+<label>재직상태</label>
+<select name="employmentStatus">
+<option value="ACTIVE" th:selected="${editEmployee==null||editEmployee.employmentStatus=='ACTIVE'}">재직</option>
+<option value="LEAVE" th:selected="${editEmployee?.employmentStatus=='LEAVE'}">휴직</option>
+<option value="RETIRED" th:selected="${editEmployee?.employmentStatus=='RETIRED'}">퇴사</option>
+</select>
+</div>
+<div>
+<label>올해 총 연차</label>
+<input name="annualLeaveTotal" type="number" min="0" step="0.5" th:value="${editEmployee==null?'15':editEmployee.annualLeaveTotal}">
+<div class="hint" th:if="${editEmployee!=null}" th:text="${'입사일 기준 권장값: '+editEmployee.annualLeaveRecommended+'일 (출근율·회사규정 확인 후 조정)'}">
+</div>
+</div>
+<div>
+<label>시급</label>
+<input name="hourlyWage" type="number" min="0" th:value="${editEmployee==null?'0':editEmployee.hourlyWage}" required>
+<div class="hint">야근수당과 주휴수당 계산에 사용됩니다.</div>
+</div>
+<div>
+<label>주 소정근로시간</label>
+<input name="weeklyScheduledHours" type="number" min="0" step="0.5" th:value="${editEmployee==null?'40':editEmployee.weeklyScheduledHours}" required>
+</div>
+<div>
+<label>주 소정근로일수</label>
+<input name="weeklyScheduledDays" type="number" min="1" max="7" th:value="${editEmployee==null?'5':editEmployee.weeklyScheduledDays}" required>
+</div>
+<div>
+<label>1일 소정근로시간</label>
+<input name="dailyScheduledHours" type="number" min="0" step="0.5" th:value="${editEmployee==null?'8':editEmployee.dailyScheduledHours}" required>
+</div>
+<div>
+<label>이력서 파일</label>
+<input name="resume" type="file" accept=".pdf,.doc,.docx,.hwp,.hwpx">
+<div class="hint">PDF·Word·한글, 최대 10MB</div>
+</div>
+<div class="full" th:if="${editEmployee?.resumeOriginalName!=null}">
+<a class="btn secondary" th:href="@{/employee/resume(employeeId=${editEmployee.employeeId})}" th:text="${'이력서 다운로드: '+editEmployee.resumeOriginalName}">
+</a>
+</div>
+<div class="full">
+<label>메모</label>
+<textarea name="memo" th:text="${editEmployee?.memo}">
+</textarea>
+</div>
+</div>
+<div class="employee-form-actions">
+<a class="btn secondary" href="/employee/list">취소</a>
+<button class="btn primary" type="submit">직원 정보 저장</button>
+</div>
+</form>
+<div class="leave" th:if="${editEmployee!=null}">
+<h3>연차 사용 등록</h3>
+<div class="summary">
+<div>총 <b th:text="${editEmployee.annualLeaveTotal}">
+</b>일</div>
+<div>사용 <b th:text="${editEmployee.annualLeaveUsed}">
+</b>일</div>
+<div>잔여 <b th:text="${editEmployee.annualLeaveRemaining}">
+</b>일</div>
+</div>
+<form action="/employee/leave" method="post">
+<input type="hidden" name="employeeId" th:value="${editEmployee.employeeId}">
+<div class="leave-grid">
+<input type="date" name="leaveDate" required>
+<input type="number" name="days" min="0.5" step="0.5" value="1" required>
+</div>
+<input name="memo" placeholder="연차 사유 또는 메모">
+<button class="btn" type="submit">연차 사용 등록</button>
+</form>
+</div>
+<div class="history" th:if="${editEmployee!=null}">
+<h3>연차 사용 이력</h3>
+<table>
+<thead>
+<tr>
+<th>사용일</th>
+<th>일수</th>
+<th>메모</th>
+<th>등록자</th>
+<th>관리</th>
+</tr>
+</thead>
+<tbody>
+<tr th:each="h:${leaveHistory}">
+<td th:text="${h.leaveDate}">
+</td>
+<td th:text="${h.days+'일'}">
+</td>
+<td th:text="${h.memo}">
+</td>
+<td th:text="${h.createdBy}">
+</td>
+<td><form action="/employee/leave/delete" method="post" onsubmit="return confirm('이 연차 이력을 삭제할까요?');"><input type="hidden" name="leaveHistoryId" th:value="${h.leaveHistoryId}"><input type="hidden" name="employeeId" th:value="${editEmployee.employeeId}"><button class="btn" type="submit">삭제</button></form></td>
+</tr>
+<tr th:if="${#lists.isEmpty(leaveHistory)}">
+<td colspan="5">연차 사용 이력이 없습니다.</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="allowance-management" class="leave" th:if="${editEmployee!=null}">
+<h3 th:text="${editEmployee.employeeName+' 날짜별 수당 달력'}">날짜별 수당 달력</h3>
+<form method="get" action="/employee/list">
+<input type="hidden" name="editId" th:value="${editEmployee.employeeId}">
+<div class="leave-grid">
+<input type="month" name="workMonth" th:value="${workMonth}">
+<button class="btn" type="submit">월 보기</button>
+</div>
+</form>
+<div class="allowance-summary">
+<div><span>도마·야근 수당</span><strong th:text="${#numbers.formatInteger(productionOvertimeTotal,0,'COMMA')+'원'}">0원</strong></div>
+<div><span>주휴수당</span><strong th:text="${#numbers.formatInteger(weeklyHolidayAllowanceTotal,0,'COMMA')+'원'}">0원</strong><small>조건 충족 주 자동 계산</small></div>
+<div class="total"><span th:text="${workMonth+' 전체 수당'}">전체 수당</span><strong th:text="${#numbers.formatInteger(workAllowanceTotal,0,'COMMA')+'원'}">0원</strong></div>
+</div>
+<p class="hint">달력 날짜를 누르면 그날의 도마 개수와 야근시간을 등록하거나 수정할 수 있습니다.</p>
+<div id="allowanceCalendar" th:attr="data-month=${workMonth}">
+</div>
+<div id="workRecords" hidden>
+<i th:each="w:${workAllowances}" th:attr="data-date=${w.workDate},data-qty=${w.boardQuantity},data-unit=${w.boardUnitPrice},data-board=${w.boardAllowance},data-hours=${w.overtimeHours},data-overtime=${w.overtimeAllowance},data-total=${w.totalAllowance},data-attended=${w.attended}">
+</i>
+</div>
+<div id="workAllowanceModal" class="work-modal-overlay" hidden>
+<form id="workAllowanceForm" class="calendar-entry-form" action="/employee/work-allowance" method="post">
+<input type="hidden" name="employeeId" th:value="${editEmployee.employeeId}">
+<div class="work-modal-title"><h3 id="workAllowanceFormTitle">날짜별 작업 등록</h3><button id="closeWorkAllowanceModal" type="button" aria-label="닫기">×</button></div>
+<div class="grid">
+<div>
+<label>작업 날짜</label>
+<input id="workDate" type="date" name="workDate" required readonly>
+</div>
+<div>
+<label>도마 깎은 개수</label>
+<input id="boardQuantity" type="number" name="boardQuantity" min="0" value="0" required>
+</div>
+<div>
+<label>도마 개당 단가</label>
+<input id="boardUnitPrice" type="number" name="boardUnitPrice" min="0" value="0" required>
+</div>
+<div>
+<label>야근 시간</label>
+<input id="overtimeHours" type="number" name="overtimeHours" min="0" step="0.5" value="0">
+</div>
+<div>
+<label>저장된 시급</label>
+<input th:value="${#numbers.formatInteger(editEmployee.hourlyWage,0,'COMMA')+'원'}" readonly>
+<div class="hint">야근수당은 저장된 시급 × 시간 × 1.5로 계산</div>
+</div>
+<div>
+<label>근무 여부</label>
+<select id="attended" name="attended">
+<option value="true">근무함</option>
+<option value="false">결근</option>
+</select>
+<div class="hint">주 소정근로일을 개근한 주만 주휴수당 계산</div>
+</div>
+<div>
+<label>메모</label>
+<input name="memo" placeholder="작업 내용">
+</div>
+</div>
+<button class="btn" type="submit">날짜별 작업·야근 저장</button>
+<button id="deleteWorkAllowance" class="btn" type="submit" formaction="/employee/work-allowance/delete" formmethod="post" hidden onclick="return confirm('이 날짜의 작업·수당 기록을 삭제할까요?');">기록 삭제</button>
+</form>
+</div>
+</div>
+<div id="payroll-management" class="leave" th:if="${editEmployee!=null}">
+<h3 th:text="${editEmployee.employeeName+' 월급 관리'}">월급 관리</h3>
+<p class="hint">급여 담당자가 계산한 수당과 공제 총액을 입력하면 실지급액이 자동 계산됩니다.</p>
+<form action="/employee/payroll" method="post">
+<input type="hidden" name="employeeId" th:value="${editEmployee.employeeId}">
+<div class="grid">
+<div>
+<label>급여월</label>
+<input id="payMonth" type="month" name="payMonth" required>
+</div>
+<div>
+<label>지급상태</label>
+<select id="paymentStatus" name="paymentStatus">
+<option value="PENDING">지급 예정</option>
+<option value="PAID">지급 완료</option>
+</select>
+</div>
+<div>
+<label>기본급</label>
+<input id="baseSalary" type="number" name="baseSalary" min="0" value="0" required>
+</div>
+<div>
+<label>기타 수당</label>
+<input id="allowance" type="number" name="allowance" min="0" value="0">
+<div class="hint">위 달력의 도마·야근 수당은 급여 저장 시 자동으로 더해집니다.</div>
+</div>
+<div>
+<label>공제 합계</label>
+<input id="deduction" type="number" name="deduction" min="0" value="0">
+</div>
+<div>
+<label>예상 실지급액</label>
+<input id="netSalaryPreview" value="0원" readonly>
+</div>
+<div>
+<label>지급일</label>
+<input id="paymentDate" type="date" name="paymentDate">
+</div>
+<div>
+<label>메모</label>
+<input id="payrollMemo" name="memo" placeholder="상여, 식대, 공제 내역 등">
+</div>
+</div>
+<button class="btn" type="submit">월 급여 저장</button>
+</form>
+<div class="history">
+<h3>최근 급여 내역</h3>
+<table>
+<thead>
+<tr>
+<th>급여월</th>
+<th class="num">기본급</th>
+<th class="num">수당</th>
+<th class="num">공제</th>
+<th class="num">실지급</th>
+<th>상태</th>
+<th>관리</th>
+</tr>
+</thead>
+<tbody>
+<tr th:each="p:${payrollHistory}">
+<td th:text="${p.payMonth}">
+</td>
+<td class="num" th:text="${#numbers.formatInteger(p.baseSalary,0,'COMMA')+'원'}">
+</td>
+<td class="num" th:text="${#numbers.formatInteger(p.allowance,0,'COMMA')+'원'}">
+</td>
+<td class="num" th:text="${#numbers.formatInteger(p.deduction,0,'COMMA')+'원'}">
+</td>
+<td class="num">
+<b th:text="${#numbers.formatInteger(p.netSalary,0,'COMMA')+'원'}">
+</b>
+</td>
+<td th:text="${p.paymentStatus=='PAID'?'지급 완료':'지급 예정'}">
+</td>
+<td><button type="button" class="btn secondary payroll-edit" th:attr="data-month=${p.payMonth},data-base=${p.baseSalary},data-extra=${p.extraAllowance},data-deduction=${p.deduction},data-status=${p.paymentStatus},data-date=${p.paymentDate},data-memo=${p.memo}">수정</button><form action="/employee/payroll/delete" method="post" style="display:inline" onsubmit="return confirm('이 급여 이력을 삭제할까요?');"><input type="hidden" name="payrollId" th:value="${p.payrollId}"><input type="hidden" name="employeeId" th:value="${editEmployee.employeeId}"><button class="btn" type="submit">삭제</button></form></td>
+</tr>
+<tr th:if="${#lists.isEmpty(payrollHistory)}">
+<td colspan="7">등록된 급여 내역이 없습니다.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+<section class="panel">
+<h2>직원 목록</h2>
+<div class="employee-tools">
+<input id="employeeSearch" placeholder="사번, 이름, 부서, 직급 검색">
+<select id="employeeStatus">
+<option value="">전체 상태</option>
+<option value="ACTIVE">재직</option>
+<option value="LEAVE">휴직</option>
+<option value="RETIRED">퇴사</option>
+</select>
+</div>
+<table>
+<thead>
+<tr>
+<th>사번</th>
+<th>직원명</th>
+<th>부서/직급</th>
+<th>입사일</th>
+<th>상태</th>
+<th class="num">총 연차</th>
+<th class="num">사용</th>
+<th class="num">남은 연차</th>
+<th>이력서</th>
+<th>관리</th>
+</tr>
+</thead>
+<tbody id="employeeRows">
+<tr th:each="e:${employees}" th:classappend="${editEmployee!=null and editEmployee.employeeId==e.employeeId}?' selected-row':''">
+<td th:text="${e.employeeCode}">
+</td>
+<td>
+<b th:text="${e.employeeName}">
+</b>
+<div th:text="${e.phone}">
+</div>
+</td>
+<td th:text="${(e.department?:'-')+' / '+(e.positionName?:'-')}">
+</td>
+<td th:text="${e.hireDate?:'-'}">
+</td>
+<td>
+<span class="status" th:classappend="${e.employmentStatus!='ACTIVE'}?' off':''" th:text="${e.employmentStatus=='ACTIVE'?'재직':(e.employmentStatus=='LEAVE'?'휴직':'퇴사')}">
+</span>
+</td>
+<td class="num" th:text="${e.annualLeaveTotal+'일'}">
+</td>
+<td class="num" th:text="${e.annualLeaveUsed+'일'}">
+</td>
+<td class="num remaining" th:classappend="${e.annualLeaveRemaining<3}?' low':''" th:text="${e.annualLeaveRemaining+'일'}">
+</td>
+<td>
+<a th:if="${e.resumeStoredName!=null}" class="btn secondary" th:href="@{/employee/resume(employeeId=${e.employeeId})}">다운로드</a>
+<span th:unless="${e.resumeStoredName!=null}">-</span>
+</td>
+<td>
+<a class="btn secondary" th:href="@{/employee/list(editId=${e.employeeId},view='info')}" th:text="${editEmployee!=null and editEmployee.employeeId==e.employeeId}?'수정 중':'직원정보 수정'">직원정보 수정</a>
+<form action="/employee/delete" method="post" style="display:inline" onsubmit="return confirm('이 직원을 삭제하시겠습니까? 기존 연차·급여 이력은 보존됩니다.');">
+<input type="hidden" name="employeeId" th:value="${e.employeeId}">
+<button class="btn" type="submit" style="background:#fdeaea;color:#a52d2d">삭제</button>
+</form>
+</td>
+</tr>
+<tr th:if="${#lists.isEmpty(employees)}">
+<td colspan="10">등록된 직원이 없습니다.</td>
+</tr>
+</tbody>
+</table>
+</section>
+</div>
+</main>
+<script>const employeeSearch=document.getElementById('employeeSearch'),employeeStatus=document.getElementById('employeeStatus'),employeeRows=[...document.querySelectorAll('#employeeRows tr')];function filterEmployees(){const q=employeeSearch.value.trim().toLowerCase(),statusText={ACTIVE:'재직',LEAVE:'휴직',RETIRED:'퇴사'}[employeeStatus.value]||'';employeeRows.forEach(row=>{const text=row.innerText.toLowerCase(),status=row.cells[4]?.innerText.trim()||'',show=(!q||text.includes(q))&&(!statusText||status===statusText);row.style.display=show?'':'none';});}employeeSearch.addEventListener('input',filterEmployees);employeeStatus.addEventListener('change',filterEmployees);</script>
+</body>
+</html>

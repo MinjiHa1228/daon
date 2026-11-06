@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>수주·생산·출고 - 다온테크 ERP</title>
+<link rel="stylesheet" href="/mobile.css">
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f3f6f8;color:#203243;font-family:"Malgun Gothic",sans-serif}.nav{height:64px;background:#17324d;color:#fff;display:flex;align-items:center;gap:22px;padding:0 28px}.nav b{font-size:21px}.nav a{color:#dceaf2;text-decoration:none;font-weight:700}.wrap{max-width:1680px;margin:24px auto;padding:0 20px}.top{display:flex;justify-content:space-between;align-items:center}.cards{display:grid;grid-template-columns:repeat(2,220px);gap:12px;margin:16px 0}.card,.panel{background:#fff;border:1px solid #d6e0e6;border-radius:10px;padding:18px}.card span{color:#687986}.card strong{display:block;font-size:25px;margin-top:5px}.layout{display:grid;grid-template-columns:420px 1fr;gap:16px;align-items:start}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.full{grid-column:1/-1}label{display:block;font-weight:800;margin:7px 0 5px}input,select,textarea{width:100%;padding:10px;border:1px solid #b7c8d3;border-radius:6px;font:inherit}textarea{height:70px}.btn{border:0;border-radius:6px;padding:9px 12px;font-weight:800;cursor:pointer}.primary{background:#267dad;color:#fff;width:100%;margin-top:12px}.message,.error{padding:11px;border-radius:7px;margin:10px 0}.message{background:#e5f5ed;color:#1d6848}.error{background:#fdeaea;color:#a72d2d}.toolbar{display:flex;gap:8px;margin-bottom:12px}.toolbar input,.toolbar select{max-width:280px}table{width:100%;border-collapse:collapse;min-width:1200px}th{background:#eaf1f5;color:#526572;padding:10px;text-align:left}td{padding:10px;border-top:1px solid #d9e2e7;vertical-align:top}.num{text-align:right}.status{display:inline-block;border-radius:999px;padding:4px 8px;background:#e7f2f8;color:#176b94;font-weight:800;font-size:12px}.status.done{background:#e5f5ed;color:#187046}.due{color:#d03939;font-weight:800}.quick{display:flex;gap:5px}.quick input{width:72px;padding:7px}.quick .produce{background:#e5f5ed;color:#176744}.quick .ship{background:#e8f1fb;color:#1e6192}@media(max-width:1100px){.layout{grid-template-columns:1fr}.cards{grid-template-columns:1fr 1fr}}</style>
+<style>.product-label{display:flex;justify-content:space-between;align-items:center}.mini-add{border:0;background:#e5f2f8;color:#17678f;border-radius:6px;padding:6px 9px;font-weight:800;cursor:pointer}.quick-modal[hidden]{display:none}.quick-modal{position:fixed;inset:0;z-index:1000;background:#10283d99;display:flex;align-items:center;justify-content:center;padding:15px}.quick-product-card{width:min(680px,100%);max-height:92vh;overflow:auto;background:#fff;border-radius:12px;padding:20px}.quick-product-title{display:flex;justify-content:space-between;align-items:center}.quick-product-title button{border:0;background:#edf3f6;border-radius:50%;width:38px;height:38px;font-size:24px}.quick-product-card .grid{grid-template-columns:1fr 1fr}.quick-product-card .actions{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}.quick-product-card .actions .primary{width:auto;margin:0}.order-actions{display:flex;gap:6px;margin-top:8px}.order-actions form{margin:0}.order-action{height:31px;display:inline-flex;align-items:center;justify-content:center;gap:4px;padding:0 9px;border-radius:7px;border:1px solid transparent;font-size:12px;font-weight:800;text-decoration:none;cursor:pointer}.order-edit{color:#176b94;background:#e8f3f9;border-color:#b8d9e9}.order-delete{color:#b53333;background:#fff0f0;border-color:#f0c5c5}.order-edit:hover{background:#d5ebf5}.order-delete:hover{background:#fde1e1}@media(max-width:600px){.quick-product-card .grid{grid-template-columns:1fr}}</style>
+<script defer src="/common-nav.js"></script></head>
+<body>
+<nav class="nav" th:attr="data-admin=${session.loginUser.role=='ADMIN'}">
+<b>다온테크 ERP</b>
+<a href="/product/list">재고 관리</a>
+<a href="/order/list">수주·생산·출고</a>
+<a href="/customer/list">거래처 관리</a>
+<a href="/employee/list">직원 관리</a>
+<a href="/admin/audit">변경 이력</a>
+</nav>
+<main class="wrap">
+<div class="top">
+<div>
+<h1>수주·생산·출고</h1>
+<p>거래처 주문부터 생산 실적과 납품까지 한 번에 관리합니다.</p>
+</div>
+</div>
+<div class="cards">
+<div class="card">
+<span>진행 중 주문</span>
+<strong th:text="${openCount+'건'}">0건</strong>
+</div>
+<div class="card">
+<span>3일 이내 납기</span>
+<strong th:text="${dueCount+'건'}">0건</strong>
+</div>
+</div>
+<div th:if="${message}" class="message" th:text="${message}">
+</div>
+<div th:if="${error}" class="error" th:text="${error}">
+</div>
+<div class="layout">
+<section class="panel">
+<h2 th:text="${editOrder==null?'새 수주 등록':'수주 수정'}">새 수주 등록</h2>
+<form th:action="${editOrder==null?'/order/create':'/order/update'}" method="post">
+<input th:if="${editOrder!=null}" type="hidden" name="orderId" th:value="${editOrder.orderId}">
+<div class="grid">
+<div class="full">
+<label>거래처</label>
+<select name="customerId" required>
+<option value="">선택</option>
+<option th:each="c:${customers}" th:value="${c.customerId}" th:text="${c.customerName}" th:selected="${editOrder!=null and editOrder.customerId==c.customerId}">
+</option>
+</select>
+</div>
+<div class="full">
+<label class="product-label">상품 <button id="openQuickProduct" class="mini-add" type="button">+ 상품 빠른 등록</button></label>
+<select id="orderProduct" name="productCode" required>
+<option value="">선택</option>
+<option th:each="p:${products}" th:value="${p.productCode}" th:text="${p.productCode+' · '+p.productName+' · '+p.color}" th:attr="data-price=${p.price}" th:selected="${p.productCode==newProduct or (editOrder!=null and p.productCode==editOrder.productCode)}">
+</option>
+</select>
+</div>
+<div>
+<label>주문일</label>
+<input type="date" name="orderDate" required th:value="${editOrder?.orderDate}">
+</div>
+<div>
+<label>납기일</label>
+<input type="date" name="dueDate" required th:value="${editOrder?.dueDate}">
+</div>
+<div>
+<label>주문수량</label>
+<input id="orderedQty" type="number" name="orderedQty" min="1" required th:value="${editOrder?.orderedQty}">
+</div>
+<div>
+<label>개당 단가</label>
+<input id="orderUnitPrice" type="number" name="unitPrice" min="0" th:value="${editOrder==null?0:editOrder.unitPrice}" required>
+</div>
+<div class="full">
+<label>메모</label>
+<textarea name="memo" placeholder="규격, 포장방법, 거래처 요청사항" th:text="${editOrder?.memo}">
+</textarea>
+</div>
+<div th:if="${editOrder!=null}"><label>누적 생산수량</label><input type="number" name="producedQty" min="0" th:value="${editOrder.producedQty}" required></div><div th:if="${editOrder!=null}"><label>누적 불량수량</label><input type="number" name="defectiveQty" min="0" th:value="${editOrder.defectiveQty}" required></div><div th:if="${editOrder!=null}"><label>누적 출고수량</label><input type="number" name="shippedQty" min="0" th:value="${editOrder.shippedQty}" required></div>
+</div>
+<button class="btn primary" type="submit" th:text="${editOrder==null?'수주 등록':'수정 내용 저장'}">수주 등록</button><a th:if="${editOrder!=null}" class="btn" href="/order/list" style="display:block;text-align:center;margin-top:8px">수정 취소</a>
+</form>
+</section>
+<section class="panel">
+<h2>진행 현황</h2>
+<div class="toolbar">
+<input id="orderSearch" placeholder="주문번호, 거래처, 상품 검색">
+<select id="orderStatus">
+<option value="">전체 상태</option>
+<option>수주</option>
+<option>생산 중</option>
+<option>출고 대기</option>
+<option>부분 출고</option>
+<option>납품 완료</option>
+</select>
+</div>
+<table>
+<thead>
+<tr>
+<th>주문번호</th>
+<th>거래처/상품</th>
+<th>주문·납기</th>
+<th class="num">주문</th>
+<th class="num">생산</th>
+<th class="num">불량</th>
+<th class="num">출고</th>
+<th>상태</th>
+<th>생산 처리</th>
+<th>출고 처리</th>
+</tr>
+</thead>
+<tbody id="orderRows">
+<tr th:each="o:${orders}">
+<td>
+<b th:text="${o.orderNo}">
+</b>
+<div th:text="${#numbers.formatInteger(o.totalAmount,0,'COMMA')+'원'}">
+</div>
+<div class="order-actions" th:if="${o.orderStatus!='CANCELLED'}"><a class="order-action order-edit" th:href="@{/order/list(editId=${o.orderId})}">✎ 수정</a><form action="/order/delete" method="post" onsubmit="return confirm('이 수주를 삭제(취소)할까요? 이력은 보존됩니다.');"><input type="hidden" name="orderId" th:value="${o.orderId}"><button class="order-action order-delete" type="submit">× 삭제</button></form></div>
+</td>
+<td>
+<b th:text="${o.customerName}">
+</b>
+<div th:text="${o.productCode+' · '+o.productName}">
+</div>
+</td>
+<td>
+<span th:text="${o.orderDate}">
+</span>
+<div th:classappend="${o.orderStatus!='SHIPPED' and !o.dueDate.isAfter(T(java.time.LocalDate).now().plusDays(3))}?'due':''" th:text="${'납기 '+o.dueDate}">
+</div>
+</td>
+<td class="num" th:text="${o.orderedQty}">
+</td>
+<td class="num" th:text="${o.producedQty+' / 잔 '+o.productionRemaining}">
+</td>
+<td class="num" th:text="${o.defectiveQty}">
+</td>
+<td class="num" th:text="${o.shippedQty+' / 잔 '+o.shipmentRemaining}">
+</td>
+<td>
+<span class="status" th:classappend="${o.orderStatus=='SHIPPED'}?' done':''" th:text="${o.orderStatus=='ORDERED'?'수주':(o.orderStatus=='PRODUCTION'?'생산 중':(o.orderStatus=='READY'?'출고 대기':(o.orderStatus=='PARTIAL_SHIPMENT'?'부분 출고':(o.orderStatus=='CANCELLED'?'삭제됨':'납품 완료'))))}">
+</span>
+</td>
+<td>
+<form th:if="${o.orderStatus!='CANCELLED' and o.orderStatus!='SHIPPED'}" class="quick" action="/order/produce" method="post">
+<input type="hidden" name="orderId" th:value="${o.orderId}">
+<input type="number" name="goodQty" min="0" placeholder="양품">
+<input type="number" name="defectiveQty" min="0" value="0" title="불량">
+<button class="btn produce" type="submit">생산</button>
+</form>
+</td>
+<td>
+<form th:if="${o.orderStatus!='CANCELLED' and o.orderStatus!='SHIPPED'}" class="quick" action="/order/ship" method="post">
+<input type="hidden" name="orderId" th:value="${o.orderId}">
+<input type="number" name="shipmentQty" min="1" placeholder="수량">
+<button class="btn ship" type="submit">출고</button>
+</form>
+</td>
+</tr>
+<tr th:if="${#lists.isEmpty(orders)}">
+<td colspan="10">등록된 수주가 없습니다.</td>
+</tr>
+</tbody>
+</table>
+</section>
+</div>
+</main>
+<div id="quickProductModal" class="quick-modal" hidden><form class="quick-product-card" action="/order/product/create" method="post"><div class="quick-product-title"><h2>상품 빠른 등록</h2><button id="closeQuickProduct" type="button">×</button></div><div class="grid"><div><label>상품코드</label><input name="productCode" placeholder="예: CB-PNK" required></div><div><label>상품명</label><input name="productName" placeholder="예: 도마" required></div><div><label>구분</label><select name="type"><option value="SINGLE">단품</option><option value="SET">세트</option></select></div><div><label>카테고리</label><select name="category"><option>도마</option><option>거치대</option><option>세트</option><option>기타</option></select></div><div><label>색상</label><input name="color" placeholder="예: 핑크"></div><div><label>단가</label><input name="price" type="number" min="0" value="0"></div></div><div class="actions"><button id="cancelQuickProduct" class="btn" type="button">취소</button><button class="btn primary" type="submit">상품 저장</button></div></form></div>
+<script>const p=document.getElementById('orderProduct'),price=document.getElementById('orderUnitPrice');p.addEventListener('change',()=>{price.value=p.selectedOptions[0]?.dataset.price||0});const q=document.getElementById('orderSearch'),s=document.getElementById('orderStatus'),rows=[...document.querySelectorAll('#orderRows tr')];function f(){rows.forEach(r=>r.style.display=(!q.value||r.innerText.toLowerCase().includes(q.value.toLowerCase()))&&(!s.value||r.innerText.includes(s.value))?'':'none')}q.addEventListener('input',f);s.addEventListener('change',f);</script>
+<script>const quickModal=document.getElementById('quickProductModal');function closeQuick(){quickModal.hidden=true;document.body.style.overflow=''}document.getElementById('openQuickProduct').addEventListener('click',()=>{quickModal.hidden=false;document.body.style.overflow='hidden';quickModal.querySelector('input').focus()});document.getElementById('closeQuickProduct').addEventListener('click',closeQuick);document.getElementById('cancelQuickProduct').addEventListener('click',closeQuick);quickModal.addEventListener('click',e=>{if(e.target===quickModal)closeQuick()});document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!quickModal.hidden)closeQuick()});if(p.value){price.value=p.selectedOptions[0]?.dataset.price||0}</script>
+</body>
+</html>

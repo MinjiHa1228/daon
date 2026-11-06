@@ -1,163 +1,101 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
 <meta charset="UTF-8">
-<title>상품 관리</title>
-
-<style>
-    body {
-        font-family: 'Pretendard', 'Apple SD Gothic Neo', Arial, sans-serif;
-        background-color: #f5f6f8;
-        margin: 0;
-        padding: 30px;
-    }
-
-    h1 {
-        margin-bottom: 20px;
-        font-size: 22px;
-    }
-
-    .container {
-        background: #fff;
-        padding: 20px;
-        border-radius: 10px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-    }
-
-    .top-bar {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 15px;
-    }
-
-    .btn {
-        padding: 8px 14px;
-        background-color: #2f80ed;
-        color: #fff;
-        border-radius: 6px;
-        text-decoration: none;
-        font-size: 14px;
-    }
-
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 14px;
-    }
-
-    thead {
-        background-color: #f1f3f5;
-    }
-
-    th, td {
-        padding: 10px 8px;
-        border-bottom: 1px solid #e5e7eb;
-        text-align: center;
-    }
-
-    th {
-        font-weight: 600;
-        color: #333;
-    }
-
-    tbody tr:hover {
-        background-color: #f9fafb;
-    }
-
-    .badge {
-        display: inline-block;
-        padding: 3px 8px;
-        border-radius: 12px;
-        font-size: 12px;
-        font-weight: 600;
-    }
-
-    .badge-single {
-        background: #e8f0fe;
-        color: #2f80ed;
-    }
-
-    .badge-set {
-        background: #fdecea;
-        color: #d93025;
-    }
-
-    .use-yes {
-        color: #27ae60;
-        font-weight: bold;
-    }
-
-    .use-no {
-        color: #e74c3c;
-        font-weight: bold;
-    }
-
-    .empty-color {
-        color: #aaa;
-        font-style: italic;
-    }
-</style>
-</head>
-
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>다온테크 ERP</title>
+<style>:root{--navy:#17324d;--blue:#2675a8;--line:#aeb8bf;--gray:#c8c8c8;--purple:#c8bdd7;--orange:#f4c89e;--cyan:#83c5d4}*{box-sizing:border-box}body{margin:0;background:#f4f7f9;color:#202b33;font-family:"Malgun Gothic",sans-serif}.nav{height:62px;background:var(--navy);color:#fff;display:flex;align-items:center;gap:26px;padding:0 28px}.brand{font-size:22px;font-weight:800;margin-right:20px}.nav a{color:#dceaf2;text-decoration:none;font-weight:700}.wrap{max-width:100%;margin:24px auto;padding:0 20px}.top{display:flex;justify-content:space-between;align-items:flex-end;gap:15px;margin-bottom:15px}.top h1{margin:0 0 5px}.buttons a,.monthbar button{display:inline-block;text-decoration:none;border:0;border-radius:6px;padding:10px 14px;background:#2675a8;color:#fff;font-weight:700;cursor:pointer}.buttons .white{background:#fff;color:#17324d;border:1px solid #c8d1d8}.cards{display:flex;gap:12px;margin-bottom:15px}.card{min-width:180px;background:#fff;border:1px solid #d8e1e8;border-radius:8px;padding:12px 16px}.card span{color:#687985;font-size:13px}.card strong{display:block;font-size:23px;margin-top:3px}.monthbar{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid #d8e1e8;border-radius:8px;padding:10px 12px;margin-bottom:12px}.monthbar a{font-size:22px;text-decoration:none;color:#17324d;padding:0 8px}.monthbar input{padding:8px;border:1px solid #bac6ce;border-radius:5px}.sheet{background:#fff;border:1px solid #8f999f;overflow:auto;max-height:calc(100vh - 300px);box-shadow:0 2px 8px #00000010}table{border-collapse:separate;border-spacing:0;min-width:max-content;width:100%;font-size:13px}th,td{height:34px;padding:6px 9px;border-right:1px solid #9ba4aa;border-bottom:1px solid #9ba4aa;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}thead th{position:sticky;top:0;z-index:5;background:var(--gray);text-align:center;font-weight:700;height:52px}.name{text-align:left;position:sticky;left:0;background:#fff;z-index:2;min-width:190px;max-width:240px}.code{text-align:left;position:sticky;left:190px;background:#fff;z-index:2;min-width:95px}.prev{background:#eef0f1;min-width:85px}.daily{min-width:60px}.comp,.move,.lack{background:#f8fafb;min-width:76px}.totalin{background:#e4dced;min-width:85px}.bad{background:#f9dfc6;min-width:75px}.current{background:#b7e0e9;font-weight:800;font-size:14px;min-width:90px}.current.low{color:#c62e2e}thead .name,thead .code{z-index:7;background:var(--gray)}thead .totalin{background:var(--purple)}thead .bad{background:var(--orange)}thead .current{background:var(--cyan)}tbody tr:hover td{filter:brightness(.97)}.dash{color:#9ca5ab}.legend{font-size:13px;color:#62727e;margin-top:8px}@media(max-width:800px){.nav{padding:0 10px;gap:12px}.wrap{padding:0 8px}.top{align-items:flex-start;flex-direction:column}.cards{overflow:auto;width:100%}}</style>
+<link rel="stylesheet" href="/mobile.css">
+<script defer src="/common-nav.js"></script></head>
 <body>
-
-<h1>📦 상품 관리</h1>
-
-<div class="container">
-        <button type="button" onclick="openStockPopup('IN')">입고</button>
-		<button type="button" onclick="openStockPopup('OUT')">출고</button>
-
-    <div class="top-bar">
-        <div>총 <b th:text="${#lists.size(list)}"></b>개 상품</div>
-        
-        <a href="/product/insert" class="btn">+ 상품 등록</a>
-    </div>
-
-    <table>
-        <thead>
-            <tr>
-                <th>코드</th>
-                <th>상품명</th>
-                <th>타입</th>
-                <th>색상</th>
-                <th>카테고리</th>
-                <th>가격</th>
-                <th>사용여부</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr th:each="p : ${list}">
-                <td th:text="${p.productCode}"></td>
-                <td th:text="${p.productName}"></td>
-
-                <td>
-                    <span class="badge"
-                          th:classappend="${p.type == 'SET'} ? ' badge-set' : ' badge-single'"
-                          th:text="${p.type}">
-                    </span>
-                </td>
-
-                <td th:if="${p.color != null}"
-                    th:text="${p.color}">
-                </td>
-                <td th:if="${p.color == null}"
-                    class="empty-color">-</td>
-
-                <td th:text="${p.category}"></td>
-
-                <td th:text="${#numbers.formatInteger(p.price, 0, 'COMMA')} + ' 원'"></td>
-
-                <td>
-                    <span th:class="${p.useYn == 'Y'} ? 'use-yes' : 'use-no'"
-                          th:text="${p.useYn == 'Y'} ? '사용중' : '미사용'">
-                    </span>
-                </td>
-            </tr>
-        </tbody>
-    </table>
-
+<nav class="nav" th:attr="data-admin=${session.loginUser.role=='ADMIN'}">
+<div class="brand">다온테크 ERP</div>
+<a href="/product/list">재고 관리</a>
+<a href="/order/list">수주·생산·출고</a>
+<a href="/stock/ledger">월별 재고대장</a>
+<a href="/stock/movement">입출고 처리</a>
+<a href="/stock/history">입출고 이력</a>
+<a href="/customer/list">거래처 관리</a>
+</nav>
+<main class="wrap">
+<div class="top">
+<div>
+<h1>입출고 및 재고 현황</h1>
+<div th:text="${monthLabel}+' 마감 기준'">월 마감 기준</div>
 </div>
-
+<div class="buttons">
+<a class="white" href="/product/insert">+ 상품 등록</a> <a href="/stock/movement">입출고 등록</a>
+</div>
+</div>
+<div class="cards">
+<div class="card">
+<span>등록 상품</span>
+<strong th:text="${#lists.size(list)}+'개'">0개</strong>
+</div>
+<div class="card">
+<span>현재 총재고</span>
+<strong th:text="${#numbers.formatInteger(totalStock,0,'COMMA')}+'개'">0개</strong>
+</div>
+<div class="card">
+<span>100개 미만</span>
+<strong th:text="${lowStockCount}+'개'">0개</strong>
+</div>
+</div>
+<form class="monthbar" action="/stock/ledger" method="get">
+<a th:href="@{/stock/ledger(month=${previousMonth})}" title="이전 달">‹</a>
+<strong th:text="${monthLabel}">
+</strong>
+<a th:href="@{/stock/ledger(month=${nextMonth})}" title="다음 달">›</a>
+<input type="month" name="month" th:value="${selectedMonth}">
+<button type="submit">조회</button>
+</form>
+<section class="sheet">
+<table>
+<thead>
+<tr>
+<th class="name">구분</th>
+<th class="code">상품코드</th>
+<th class="prev">전월재고</th>
+<th class="daily" th:each="d:${days}" th:text="${d}">
+</th>
+<th class="comp">보상분</th>
+<th class="comp">출고분</th>
+<th class="move">재고이동</th>
+<th class="lack">수량부족</th>
+<th class="totalin">월 입고계</th>
+<th class="bad">월 불량</th>
+<th class="current">현재고</th>
+</tr>
+</thead>
+<tbody>
+<tr th:each="r:${ledger}">
+<td class="name" th:text="${r.displayName}">
+</td>
+<td class="code" th:text="${r.productCode}">
+</td>
+<td class="prev" th:text="${#numbers.formatInteger(r.previousStock,0,'COMMA')}">
+</td>
+<td class="daily" th:each="d:${days}" th:text="${r.dailyInbound[d]==0?'-':#numbers.formatInteger(r.dailyInbound[d],0,'COMMA')}" th:classappend="${r.dailyInbound[d]==0}?' dash':''">
+</td>
+<td class="comp" th:text="${r.compensationQty==0?'-':#numbers.formatInteger(r.compensationQty,0,'COMMA')}">
+</td>
+<td class="comp" th:text="${r.outboundQty==0?'-':#numbers.formatInteger(r.outboundQty,0,'COMMA')}">
+</td>
+<td class="move" th:text="${r.moveQty==0?'-':#numbers.formatInteger(r.moveQty,0,'COMMA')}">
+</td>
+<td class="lack" th:text="${r.lackQty==0?'-':#numbers.formatInteger(r.lackQty,0,'COMMA')}">
+</td>
+<td class="totalin" th:text="${r.monthlyInbound==0?'-':#numbers.formatInteger(r.monthlyInbound,0,'COMMA')}">
+</td>
+<td class="bad" th:text="${r.badQty==0?'-':#numbers.formatInteger(r.badQty,0,'COMMA')}">
+</td>
+<td class="current" th:classappend="${r.currentStock<100}?' low':''" th:text="${#numbers.formatInteger(r.currentStock,0,'COMMA')}">
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+<p class="legend">가로로 스크롤하면 날짜별 입고부터 보상·출고·이동·불량·현재고까지 확인할 수 있습니다. 모든 수치는 입출고 처리 화면과 자동 연결됩니다.</p>
+</main>
 </body>
 </html>

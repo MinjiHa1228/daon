@@ -9,18 +9,25 @@
     <select id="selectProductList"
             resultType="com.example.daon.vo.ProductVo">
         SELECT
-            product_code   AS productCode,
-            product_name   AS productName,
-            type,
-            color,
-            category,
-            use_yn         AS useYn,
-            price,
-            created_at     AS createdAt,
-            updated_at     AS updatedAt
-        FROM product
-        WHERE use_yn = 'Y'
-        ORDER BY product_code
+            p.product_code   AS productCode,
+            p.product_name   AS productName,
+            p.type,
+            p.color,
+            p.category,
+            p.use_yn         AS useYn,
+            p.price,
+            COALESCE(s.quantity, 0) AS quantity,
+            p.created_at     AS createdAt,
+            p.updated_at     AS updatedAt
+        FROM product p
+        LEFT JOIN product_stock s ON s.product_code = p.product_code
+        WHERE p.use_yn = 'Y'
+        ORDER BY p.category, p.product_code
+    </select>
+    <select id="selectProductByCode" resultType="com.example.daon.vo.ProductVo">
+        SELECT p.product_code AS productCode,p.product_name AS productName,p.type,p.color,p.category,p.use_yn AS useYn,p.price,
+               COALESCE(s.quantity,0) AS quantity,p.created_at AS createdAt,p.updated_at AS updatedAt
+        FROM product p LEFT JOIN product_stock s ON s.product_code=p.product_code WHERE p.product_code=#{productCode} AND p.use_yn='Y'
     </select>
 
     <!-- 상품 등록 -->
@@ -47,5 +54,340 @@
             #{price}
         )
     </insert>
+    <update id="updateProduct" parameterType="com.example.daon.vo.ProductVo">
+        UPDATE product SET product_name=#{productName},type=#{type},color=#{color},category=#{category},price=#{price},updated_at=NOW()
+        WHERE product_code=#{productCode} AND use_yn='Y'
+    </update>
+    <update id="softDeleteProduct">UPDATE product SET use_yn='N',updated_at=NOW() WHERE product_code=#{productCode} AND use_yn='Y'</update>
+
+    <insert id="insertStockIfNotExists">
+        INSERT IGNORE INTO product_stock (product_code, quantity)
+        VALUES (#{productCode}, 0)
+    </insert>
+
+    <update id="updateStock">
+        UPDATE product_stock
+        SET quantity = quantity + #{changeQty}
+        WHERE product_code = #{productCode}
+          AND quantity + #{changeQty} &gt;= 0
+    </update>
+
+    <select id="selectStock" resultType="int">
+        SELECT quantity FROM product_stock WHERE product_code = #{productCode}
+    </select>
+
+    <insert id="insertHistory">
+        INSERT INTO product_stock_history
+            (product_code, type, quantity, balance_after, customer_id, memo, created_at, created_by)
+        VALUES
+            (#{productCode}, #{historyType}, #{quantity}, #{balanceAfter}, #{customerId}, #{memo}, #{createdAt}, #{createdBy})
+    </insert>
+
+    <select id="selectStockHistory" resultType="com.example.daon.vo.StockHistoryVo">
+        SELECT
+            h.stock_history_id AS historyId,
+            h.product_code AS productCode,
+            p.product_name AS productName,
+            p.color,
+            h.type AS historyType,
+            h.quantity,
+            h.balance_after AS balanceAfter,
+            h.customer_id AS customerId,
+            c.customer_name AS customerName,
+            h.memo,
+            h.created_by AS createdBy,
+            h.created_at AS createdAt,h.cancel_yn AS cancelYn,h.cancelled_by AS cancelledBy,h.cancelled_at AS cancelledAt
+        FROM product_stock_history h
+        JOIN product p ON p.product_code = h.product_code
+        LEFT JOIN customer c ON c.customer_id = h.customer_id
+        ORDER BY h.stock_history_id DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+    <select id="countStockHistory" resultType="int">SELECT COUNT(*) FROM product_stock_history</select>
+    <select id="selectStockHistoryById" resultType="com.example.daon.vo.StockHistoryVo">
+        SELECT stock_history_id AS historyId,product_code AS productCode,type AS historyType,quantity,balance_after AS balanceAfter,
+               memo,created_by AS createdBy,created_at AS createdAt,cancel_yn AS cancelYn,cancelled_by AS cancelledBy,cancelled_at AS cancelledAt
+        FROM product_stock_history WHERE stock_history_id=#{historyId}
+    </select>
+    <update id="markStockHistoryCancelled">
+        UPDATE product_stock_history SET cancel_yn='Y',cancelled_by=#{cancelledBy},cancelled_at=NOW()
+        WHERE stock_history_id=#{historyId} AND cancel_yn='N'
+    </update>
+
+    <select id="selectStockHistoryFrom" resultType="com.example.daon.vo.StockHistoryVo">
+        SELECT
+            stock_history_id AS historyId,
+            product_code AS productCode,
+            type AS historyType,
+            quantity,
+            balance_after AS balanceAfter,
+            memo,
+            created_at AS createdAt
+        FROM product_stock_history
+        WHERE created_at &gt;= #{start}
+        ORDER BY created_at, stock_history_id
+    </select>
+
+    <select id="selectCustomerList" resultType="com.example.daon.vo.CustomerVo">
+        SELECT
+            customer_id AS customerId,
+            customer_name AS customerName,
+            manager_name AS managerName,
+            phone,
+            email,
+            address,
+            memo,
+            use_yn AS useYn,
+            created_at AS createdAt,
+            updated_at AS updatedAt
+        FROM customer
+        WHERE use_yn = 'Y'
+        ORDER BY customer_name
+    </select>
+
+    <insert id="insertCustomer" parameterType="com.example.daon.vo.CustomerVo"
+            useGeneratedKeys="true" keyProperty="customerId">
+        INSERT INTO customer
+            (customer_name, manager_name, phone, email, address, memo, use_yn, created_by, updated_by)
+        VALUES
+            (#{customerName}, #{managerName}, #{phone}, #{email}, #{address}, #{memo}, 'Y', #{createdBy}, #{updatedBy})
+    </insert>
+
+    <select id="selectCustomerById" resultType="com.example.daon.vo.CustomerVo">
+        SELECT customer_id AS customerId, customer_name AS customerName,
+               manager_name AS managerName, phone, email, address, memo,
+               use_yn AS useYn, created_by AS createdBy, updated_by AS updatedBy,
+               created_at AS createdAt, updated_at AS updatedAt
+        FROM customer
+        WHERE customer_id = #{customerId} AND use_yn = 'Y'
+    </select>
+
+    <update id="updateCustomer" parameterType="com.example.daon.vo.CustomerVo">
+        UPDATE customer
+        SET customer_name = #{customerName}, manager_name = #{managerName},
+            phone = #{phone}, email = #{email}, address = #{address}, memo = #{memo},
+            updated_by = #{updatedBy}, updated_at = CURRENT_TIMESTAMP
+        WHERE customer_id = #{customerId} AND use_yn = 'Y'
+    </update>
+
+    <update id="deleteCustomer">
+        UPDATE customer
+        SET use_yn = 'N', updated_by = #{updatedBy}, updated_at = CURRENT_TIMESTAMP
+        WHERE customer_id = #{customerId} AND use_yn = 'Y'
+    </update>
+
+    <select id="countUsers" resultType="int">SELECT COUNT(*) FROM app_user</select>
+    <select id="selectUserByUsername" resultType="com.example.daon.vo.UserVo">
+        SELECT user_id AS userId, username, password_hash AS passwordHash,
+               display_name AS displayName, role, use_yn AS useYn, created_at AS createdAt
+        FROM app_user WHERE username = #{username}
+    </select>
+    <select id="selectUserList" resultType="com.example.daon.vo.UserVo">
+        SELECT user_id AS userId, username, display_name AS displayName,
+               role, use_yn AS useYn, created_at AS createdAt
+        FROM app_user ORDER BY user_id
+    </select>
+    <insert id="insertUser" parameterType="com.example.daon.vo.UserVo" useGeneratedKeys="true" keyProperty="userId">
+        INSERT INTO app_user(username, password_hash, display_name, role, use_yn)
+        VALUES(#{username}, #{passwordHash}, #{displayName}, #{role}, 'Y')
+    </insert>
+    <update id="updateUser">
+        UPDATE app_user SET display_name=#{displayName},role=#{role},
+        password_hash=CASE WHEN #{passwordHash} IS NULL OR #{passwordHash}='' THEN password_hash ELSE #{passwordHash} END,updated_at=NOW()
+        WHERE username=#{username} AND use_yn='Y'
+    </update>
+    <update id="softDeleteUser">UPDATE app_user SET use_yn='N',updated_at=NOW() WHERE username=#{username} AND use_yn='Y'</update>
+    <select id="countActiveAdmins" resultType="int">SELECT COUNT(*) FROM app_user WHERE role='ADMIN' AND use_yn='Y'</select>
+    <insert id="insertAudit">
+        INSERT INTO audit_log(username, action_type, target_type, target_id, details)
+        VALUES(#{username}, #{actionType}, #{targetType}, #{targetId}, #{details})
+    </insert>
+    <select id="selectAuditList" resultType="com.example.daon.vo.AuditLogVo">
+        SELECT audit_id AS auditId, username, action_type AS actionType,
+               target_type AS targetType, target_id AS targetId, details, created_at AS createdAt
+        FROM audit_log
+        WHERE action_type != 'LOGIN'
+          AND created_at &gt;= DATE_SUB(NOW(), INTERVAL 1 MONTH)
+        ORDER BY audit_id DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+    <select id="countAuditLogs" resultType="int">
+        SELECT COUNT(*) FROM audit_log
+        WHERE action_type != 'LOGIN'
+          AND created_at &gt;= DATE_SUB(NOW(), INTERVAL 1 MONTH)
+    </select>
+    <delete id="deleteExpiredAuditLogs">
+        DELETE FROM audit_log
+        WHERE action_type = 'LOGIN'
+           OR created_at &lt; DATE_SUB(NOW(), INTERVAL 1 MONTH)
+    </delete>
+
+    <select id="selectEmployeeList" resultType="com.example.daon.vo.EmployeeVo">
+        SELECT e.employee_id AS employeeId, e.employee_code AS employeeCode,
+               e.employee_name AS employeeName, e.department,
+               e.position_name AS positionName, e.phone, e.email, e.hire_date AS hireDate,
+               e.employment_status AS employmentStatus, e.annual_leave_total AS annualLeaveTotal,
+               e.hourly_wage AS hourlyWage, e.weekly_scheduled_hours AS weeklyScheduledHours,
+               e.weekly_scheduled_days AS weeklyScheduledDays, e.daily_scheduled_hours AS dailyScheduledHours,
+               CASE WHEN e.hire_date IS NULL THEN 15
+                    WHEN TIMESTAMPDIFF(YEAR,e.hire_date,CURDATE()) &lt; 1
+                         THEN LEAST(11, GREATEST(0,TIMESTAMPDIFF(MONTH,e.hire_date,CURDATE())))
+                    ELSE LEAST(25,15 + FLOOR((TIMESTAMPDIFF(YEAR,e.hire_date,CURDATE())-1)/2)) END AS annualLeaveRecommended,
+               COALESCE(SUM(CASE WHEN YEAR(l.leave_date) = YEAR(CURDATE()) THEN l.days ELSE 0 END), 0) AS annualLeaveUsed,
+               e.annual_leave_total - COALESCE(SUM(CASE WHEN YEAR(l.leave_date) = YEAR(CURDATE()) THEN l.days ELSE 0 END), 0) AS annualLeaveRemaining,
+               e.resume_original_name AS resumeOriginalName, e.resume_stored_name AS resumeStoredName,
+               e.memo, e.created_by AS createdBy, e.updated_by AS updatedBy,
+               e.created_at AS createdAt, e.updated_at AS updatedAt
+        FROM employee e
+        LEFT JOIN employee_leave_history l ON l.employee_id = e.employee_id
+        WHERE e.use_yn='Y'
+        GROUP BY e.employee_id
+        ORDER BY CASE WHEN e.employment_status='ACTIVE' THEN 0 ELSE 1 END, e.employee_name
+    </select>
+    <select id="selectEmployeeById" resultType="com.example.daon.vo.EmployeeVo">
+        SELECT e.employee_id AS employeeId, e.employee_code AS employeeCode,
+               e.employee_name AS employeeName, e.department,
+               e.position_name AS positionName, e.phone, e.email, e.hire_date AS hireDate,
+               e.employment_status AS employmentStatus, e.annual_leave_total AS annualLeaveTotal,
+               e.hourly_wage AS hourlyWage, e.weekly_scheduled_hours AS weeklyScheduledHours,
+               e.weekly_scheduled_days AS weeklyScheduledDays, e.daily_scheduled_hours AS dailyScheduledHours,
+               CASE WHEN e.hire_date IS NULL THEN 15
+                    WHEN TIMESTAMPDIFF(YEAR,e.hire_date,CURDATE()) &lt; 1
+                         THEN LEAST(11, GREATEST(0,TIMESTAMPDIFF(MONTH,e.hire_date,CURDATE())))
+                    ELSE LEAST(25,15 + FLOOR((TIMESTAMPDIFF(YEAR,e.hire_date,CURDATE())-1)/2)) END AS annualLeaveRecommended,
+               COALESCE(SUM(CASE WHEN YEAR(l.leave_date) = YEAR(CURDATE()) THEN l.days ELSE 0 END), 0) AS annualLeaveUsed,
+               e.annual_leave_total - COALESCE(SUM(CASE WHEN YEAR(l.leave_date) = YEAR(CURDATE()) THEN l.days ELSE 0 END), 0) AS annualLeaveRemaining,
+               e.resume_original_name AS resumeOriginalName, e.resume_stored_name AS resumeStoredName,
+               e.memo, e.created_by AS createdBy, e.updated_by AS updatedBy,
+               e.created_at AS createdAt, e.updated_at AS updatedAt
+        FROM employee e LEFT JOIN employee_leave_history l ON l.employee_id=e.employee_id
+        WHERE e.employee_id=#{employeeId} AND e.use_yn='Y'
+        GROUP BY e.employee_id
+    </select>
+    <insert id="insertEmployee" parameterType="com.example.daon.vo.EmployeeVo" useGeneratedKeys="true" keyProperty="employeeId">
+        INSERT INTO employee(employee_code,employee_name,department,position_name,phone,email,
+            hire_date,employment_status,annual_leave_total,hourly_wage,weekly_scheduled_hours,weekly_scheduled_days,daily_scheduled_hours,resume_original_name,resume_stored_name,
+            memo,created_by,updated_by)
+        VALUES(#{employeeCode},#{employeeName},#{department},#{positionName},#{phone},#{email},
+            #{hireDate},#{employmentStatus},#{annualLeaveTotal},#{hourlyWage},#{weeklyScheduledHours},#{weeklyScheduledDays},#{dailyScheduledHours},#{resumeOriginalName},#{resumeStoredName},
+            #{memo},#{createdBy},#{updatedBy})
+    </insert>
+    <update id="updateEmployee" parameterType="com.example.daon.vo.EmployeeVo">
+        UPDATE employee SET employee_code=#{employeeCode},employee_name=#{employeeName},
+            department=#{department},position_name=#{positionName},phone=#{phone},email=#{email},
+            hire_date=#{hireDate},employment_status=#{employmentStatus},annual_leave_total=#{annualLeaveTotal},
+            hourly_wage=#{hourlyWage},weekly_scheduled_hours=#{weeklyScheduledHours},weekly_scheduled_days=#{weeklyScheduledDays},daily_scheduled_hours=#{dailyScheduledHours},
+            resume_original_name=COALESCE(#{resumeOriginalName},resume_original_name),
+            resume_stored_name=COALESCE(#{resumeStoredName},resume_stored_name),
+            memo=#{memo},updated_by=#{updatedBy},updated_at=NOW()
+        WHERE employee_id=#{employeeId}
+    </update>
+    <update id="softDeleteEmployee">
+        UPDATE employee SET use_yn='N', employment_status='RETIRED', updated_by=#{updatedBy}, updated_at=NOW()
+        WHERE employee_id=#{employeeId} AND use_yn='Y'
+    </update>
+    <insert id="insertEmployeeLeave" parameterType="com.example.daon.vo.EmployeeLeaveVo" useGeneratedKeys="true" keyProperty="leaveHistoryId">
+        INSERT INTO employee_leave_history(employee_id,leave_date,days,leave_type,memo,created_by)
+        VALUES(#{employeeId},#{leaveDate},#{days},#{leaveType},#{memo},#{createdBy})
+    </insert>
+    <select id="selectEmployeeLeaveList" resultType="com.example.daon.vo.EmployeeLeaveVo">
+        SELECT leave_history_id AS leaveHistoryId,employee_id AS employeeId,leave_date AS leaveDate,
+               days,leave_type AS leaveType,memo,created_by AS createdBy,created_at AS createdAt
+        FROM employee_leave_history WHERE employee_id=#{employeeId}
+        ORDER BY leave_date DESC,leave_history_id DESC
+    </select>
+    <delete id="deleteEmployeeLeave">DELETE FROM employee_leave_history WHERE leave_history_id=#{leaveHistoryId} AND employee_id=#{employeeId}</delete>
+    <select id="selectEmployeePayrollList" resultType="com.example.daon.vo.EmployeePayrollVo">
+        SELECT payroll_id AS payrollId,employee_id AS employeeId,pay_month AS payMonth,
+               base_salary AS baseSalary,allowance,extra_allowance AS extraAllowance,deduction,net_salary AS netSalary,
+               payment_status AS paymentStatus,payment_date AS paymentDate,memo,
+               created_by AS createdBy,updated_by AS updatedBy,created_at AS createdAt,updated_at AS updatedAt
+        FROM employee_payroll WHERE employee_id=#{employeeId}
+        ORDER BY pay_month DESC LIMIT 36
+    </select>
+    <insert id="upsertEmployeePayroll" parameterType="com.example.daon.vo.EmployeePayrollVo">
+        INSERT INTO employee_payroll(employee_id,pay_month,base_salary,allowance,extra_allowance,deduction,net_salary,
+            payment_status,payment_date,memo,created_by,updated_by)
+        VALUES(#{employeeId},#{payMonth},#{baseSalary},#{allowance},#{extraAllowance},#{deduction},#{netSalary},
+            #{paymentStatus},#{paymentDate},#{memo},#{createdBy},#{updatedBy})
+        ON DUPLICATE KEY UPDATE base_salary=VALUES(base_salary),allowance=VALUES(allowance),extra_allowance=VALUES(extra_allowance),
+            deduction=VALUES(deduction),net_salary=VALUES(net_salary),payment_status=VALUES(payment_status),
+            payment_date=VALUES(payment_date),memo=VALUES(memo),updated_by=VALUES(updated_by),updated_at=NOW()
+    </insert>
+    <delete id="deleteEmployeePayroll">DELETE FROM employee_payroll WHERE payroll_id=#{payrollId} AND employee_id=#{employeeId}</delete>
+
+    <select id="selectEmployeeWorkAllowanceList" resultType="com.example.daon.vo.EmployeeWorkAllowanceVo">
+        SELECT work_allowance_id AS workAllowanceId, employee_id AS employeeId, work_date AS workDate,
+               board_quantity AS boardQuantity, board_unit_price AS boardUnitPrice, board_allowance AS boardAllowance,
+               overtime_hours AS overtimeHours, hourly_wage AS hourlyWage,
+               overtime_multiplier AS overtimeMultiplier, overtime_allowance AS overtimeAllowance,
+               total_allowance AS totalAllowance, attended, memo, created_by AS createdBy, updated_by AS updatedBy,
+               created_at AS createdAt, updated_at AS updatedAt
+        FROM employee_work_allowance
+        WHERE employee_id=#{employeeId} AND DATE_FORMAT(work_date,'%Y-%m')=#{workMonth}
+        ORDER BY work_date
+    </select>
+    <select id="selectEmployeeWorkAllowanceTotal" resultType="java.math.BigDecimal">
+        SELECT COALESCE(SUM(total_allowance),0) FROM employee_work_allowance
+        WHERE employee_id=#{employeeId} AND DATE_FORMAT(work_date,'%Y-%m')=#{workMonth}
+    </select>
+    <insert id="upsertEmployeeWorkAllowance" parameterType="com.example.daon.vo.EmployeeWorkAllowanceVo">
+        INSERT INTO employee_work_allowance(employee_id,work_date,board_quantity,board_unit_price,board_allowance,
+            overtime_hours,hourly_wage,overtime_multiplier,overtime_allowance,total_allowance,attended,memo,created_by,updated_by)
+        VALUES(#{employeeId},#{workDate},#{boardQuantity},#{boardUnitPrice},#{boardAllowance},#{overtimeHours},
+            #{hourlyWage},#{overtimeMultiplier},#{overtimeAllowance},#{totalAllowance},#{attended},#{memo},#{createdBy},#{updatedBy})
+        ON DUPLICATE KEY UPDATE board_quantity=VALUES(board_quantity),board_unit_price=VALUES(board_unit_price),
+            board_allowance=VALUES(board_allowance),overtime_hours=VALUES(overtime_hours),hourly_wage=VALUES(hourly_wage),
+            overtime_multiplier=VALUES(overtime_multiplier),overtime_allowance=VALUES(overtime_allowance),
+            total_allowance=VALUES(total_allowance),attended=VALUES(attended),memo=VALUES(memo),updated_by=VALUES(updated_by),updated_at=NOW()
+    </insert>
+    <delete id="deleteEmployeeWorkAllowance">DELETE FROM employee_work_allowance WHERE employee_id=#{employeeId} AND work_date=#{workDate}</delete>
+
+    <select id="selectSalesOrderList" resultType="com.example.daon.vo.SalesOrderVo">
+        SELECT o.order_id AS orderId,o.order_no AS orderNo,o.customer_id AS customerId,c.customer_name AS customerName,
+               o.product_code AS productCode,p.product_name AS productName,o.ordered_qty AS orderedQty,
+               o.produced_qty AS producedQty,o.defective_qty AS defectiveQty,o.shipped_qty AS shippedQty,
+               o.unit_price AS unitPrice,o.total_amount AS totalAmount,o.order_date AS orderDate,o.due_date AS dueDate,
+               o.order_status AS orderStatus,o.memo,o.created_by AS createdBy,o.updated_by AS updatedBy,
+               o.created_at AS createdAt,o.updated_at AS updatedAt
+        FROM sales_order o JOIN customer c ON c.customer_id=o.customer_id JOIN product p ON p.product_code=o.product_code
+        ORDER BY CASE o.order_status WHEN 'SHIPPED' THEN 1 ELSE 0 END, o.due_date, o.order_id DESC
+    </select>
+    <select id="selectSalesOrderById" resultType="com.example.daon.vo.SalesOrderVo">
+        SELECT o.order_id AS orderId,o.order_no AS orderNo,o.customer_id AS customerId,c.customer_name AS customerName,
+               o.product_code AS productCode,p.product_name AS productName,o.ordered_qty AS orderedQty,
+               o.produced_qty AS producedQty,o.defective_qty AS defectiveQty,o.shipped_qty AS shippedQty,
+               o.unit_price AS unitPrice,o.total_amount AS totalAmount,o.order_date AS orderDate,o.due_date AS dueDate,
+               o.order_status AS orderStatus,o.memo,o.created_by AS createdBy,o.updated_by AS updatedBy,
+               o.created_at AS createdAt,o.updated_at AS updatedAt
+        FROM sales_order o JOIN customer c ON c.customer_id=o.customer_id JOIN product p ON p.product_code=o.product_code
+        WHERE o.order_id=#{orderId}
+    </select>
+    <insert id="insertSalesOrder" parameterType="com.example.daon.vo.SalesOrderVo" useGeneratedKeys="true" keyProperty="orderId">
+        INSERT INTO sales_order(order_no,customer_id,product_code,ordered_qty,unit_price,total_amount,order_date,due_date,order_status,memo,created_by,updated_by)
+        VALUES(#{orderNo},#{customerId},#{productCode},#{orderedQty},#{unitPrice},#{totalAmount},#{orderDate},#{dueDate},'ORDERED',#{memo},#{createdBy},#{updatedBy})
+    </insert>
+    <update id="addProducedQuantity">
+        UPDATE sales_order SET produced_qty=produced_qty+#{goodQty},defective_qty=defective_qty+#{defectiveQty},updated_by=#{updatedBy},updated_at=NOW()
+        WHERE order_id=#{orderId} AND produced_qty+#{goodQty} &lt;= ordered_qty
+    </update>
+    <update id="addShippedQuantity">
+        UPDATE sales_order SET shipped_qty=shipped_qty+#{shipmentQty},updated_by=#{updatedBy},updated_at=NOW()
+        WHERE order_id=#{orderId} AND shipped_qty+#{shipmentQty} &lt;= produced_qty
+    </update>
+    <update id="refreshSalesOrderStatus">
+        UPDATE sales_order SET order_status=CASE WHEN shipped_qty &gt;= ordered_qty THEN 'SHIPPED'
+            WHEN shipped_qty &gt; 0 THEN 'PARTIAL_SHIPMENT' WHEN produced_qty &gt;= ordered_qty THEN 'READY'
+            WHEN produced_qty &gt; 0 THEN 'PRODUCTION' ELSE 'ORDERED' END WHERE order_id=#{orderId}
+    </update>
+    <update id="updateSalesOrder" parameterType="com.example.daon.vo.SalesOrderVo">
+        UPDATE sales_order SET customer_id=#{customerId},product_code=#{productCode},ordered_qty=#{orderedQty},produced_qty=#{producedQty},defective_qty=#{defectiveQty},shipped_qty=#{shippedQty},unit_price=#{unitPrice},
+            total_amount=#{totalAmount},order_date=#{orderDate},due_date=#{dueDate},memo=#{memo},updated_by=#{updatedBy},updated_at=NOW()
+        WHERE order_id=#{orderId} AND order_status!='CANCELLED' AND #{orderedQty} &gt;= #{producedQty} AND #{orderedQty} &gt;= #{shippedQty} AND #{producedQty} &gt;= #{shippedQty}
+    </update>
+    <update id="cancelSalesOrder">
+        UPDATE sales_order SET order_status='CANCELLED',updated_by=#{updatedBy},updated_at=NOW()
+        WHERE order_id=#{orderId} AND order_status!='CANCELLED' AND shipped_qty=0
+    </update>
 
 </mapper>

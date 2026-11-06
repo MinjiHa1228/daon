@@ -16,6 +16,7 @@ public class ProductVo {
 	    private String category;  // 도마 / 거치대 / 세트
 	    private String color;         // 핑크
 	    private int price;            // 단가
+	    private int quantity;         // 현재고
 	    private String useYn;          // Y / N
 	    
 	    private LocalDateTime createdAt;
