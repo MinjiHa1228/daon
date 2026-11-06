@@ -16,6 +16,10 @@
 <a href="/stock/movement">입출고 처리</a>
 <a href="/stock/history">입출고 이력</a>
 <a href="/customer/list">거래처 관리</a>
+<form action="/logout" method="post" style="margin-left:auto">
+<button style="border:0;background:#ffffff22;color:white;padding:7px 10px;border-radius:5px;cursor:pointer" th:text="${session.loginUser.displayName}+' 로그아웃'">
+</button>
+</form>
 </nav>
 <main class="wrap">
 <div class="top">

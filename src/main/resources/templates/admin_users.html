@@ -12,6 +12,10 @@
 <b>관리자</b>　<a href="/product/list">재고 관리</a><a href="/order/list">수주·생산·출고</a>
 <a href="/admin/users">사용자 관리</a>
 <a href="/admin/audit">변경 이력</a>
+<form action="/logout" method="post" style="margin-left:auto">
+<button style="border:0;background:#ffffff22;color:white;padding:7px 10px;border-radius:5px;cursor:pointer" th:text="${session.loginUser.displayName}+' 로그아웃'">
+</button>
+</form>
 </nav>
 <main class="wrap">
 <h1>사용자 및 권한 관리</h1>
